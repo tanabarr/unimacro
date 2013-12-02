@@ -165,6 +165,7 @@ class BracketsGrammar(ancestor):
             ini.set('brackets', 'square brackets', '[]')
             ini.set('brackets', 'brackets', '()')
             ini.set('brackets', 'parenthesis', '()')
+            ini.set('brackets', 'backticks', '``')
             ini.set('brackets', 'parens', '()')
             ini.set('brackets', 'angle brackets', '<>')
             ini.set('brackets', 'triple quotes', '""""""')
