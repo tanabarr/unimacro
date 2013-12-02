@@ -36,14 +36,17 @@ word = wordpad
 
 
 [files]
-putty = po:/PuTTY/putty.exe
-search everything = po:/Everything/Everything.exe
 Windows mail = C:\Program Files (x86)\Windows Live\Mail\wlmail.exe
 cygwin terminal = db:\cygwin\shortcut.lnk
-digitl pass = C:\Program Files\Vasco\DIGIPASS for Windows 5.0\DP4Windows.exe
-voice restart = C:\Program Files (x86)\Nuance\NaturallySpeaking12\Program\nsrst.bat
-winscp = C:\Program Files (x86)\WinSCP3\WinSCP3.exe
 
+digitl pass = C:\Program Files\Vasco\DIGIPASS for Windows 5.0\DP4Windows.exe
+
+putty = po:/PuTTY/putty.exe
+search everything = po:/Everything/Everything.exe
+
+voice restart = C:\Program Files (x86)\Nuance\NaturallySpeaking12\Program\nsrst.bat
+
+winscp = C:\Program Files (x86)\WinSCP3\WinSCP3.exe
 
 [files ws]
 BTX remote.bat = BTX remote
@@ -53,6 +56,7 @@ Mobile screen.vnc = Mobile screen
 Work Lte.bat = Work Lte
 Work Unix.bat = Work Unix
 android_backup.bat = android_backup
+cvim.bat = cvim
 device_watch.bat = device_watch
 device_watch.py = device_watch
 explorer restart.bat = explorer restart
@@ -90,13 +94,21 @@ restore = <<windowrestore>>
 
 [folders]
 current project = u:/projects\enatt
+cygwin = db:\cygwin
+cygwin home = db:\cygwin\home\tan
 documents = ~
+dropbox = db
 home win = hw
+home work = u:/
 linux software notes = u:/software\linux_software_notes
+literature = u:/literature
+macrosystem = nl:\Natlink\Macrosystem
 personal = u:/personal
+prime = x:\PRIME PTS Server
 projects = u:/projects
 software = u:/software
 software notes = u:/software\generic_software_notes
+speech related = u:/software\Speech related
 voice = u:/software\Speech related
 win scripts = ws
 
@@ -106,34 +118,6 @@ NatLink = NatLink
 Unimacro = Unimacro
 Vocola = Vocola
 nl = nl; Natlink
-
-
-[folders rd]
-Acer = Acer
-Android = Android
-AndroidScreenCast = AndroidScreenCast
-Dell = Dell
-Documents and Settings = Documents and Settings
-DriveKey = DriveKey
-Intel = Intel
-MSOCache = MSOCache
-NatLink = NatLink
-PerfLogs = PerfLogs
-Program Files = Program Files
-ProgramData = ProgramData
-ProtectDrive = ProtectDrive
-Recovery = Recovery
-System Volume Information = System Volume Information
-Temp = Temp
-Users = Users
-Windows = Windows
-dell = dell
-dpwin = dpwin
-rd = rd;
-temporary = temporary
-totalcmd = totalcmd
-win scripts = win scripts
-winscriptsbak = winscriptsbak
 
 
 [folders th]
@@ -159,7 +143,7 @@ ignore file patterns = ~*; .*:
 track file extensions = .py; .doc; .xls; .txt; .ini;  .docx; .xlsx; .bat; .vnc
 
 track files virtualdrives = ws
-track folders virtualdrives = nl; th; rd
+track folders virtualdrives = nl; th
 
 
 [grammar name]
@@ -190,15 +174,12 @@ kilo = k
 
 [obsolete files]
 
+
 [obsolete folders]
-cygwin = db:\cygwin
-cygwin home = db:\cygwin\home\tan
-dropbox = db
-macrosystem = nl:\Natlink\Macrosystem
-prime = x:\PRIME PTS Server
 
 
 [obsolete virtualdrives]
+
 
 [subversionfilecommands]
 
@@ -207,15 +188,14 @@ prime = x:\PRIME PTS Server
 
 
 [virtualdrives]
+db = C:/Users/tan.000/Dropbox
 hw = C:\Users\tan.000
 md = %HOME%
+nl = C:/Natlink
 pf = C:/Program Files
 po = C:/Program Files (x86)
 rd = c:/
 ws = c:/win scripts
-db = C:/Users/tan.000/Dropbox
-nl = C:/Natlink
-
 
 
 [websiteopenprograms]
@@ -226,15 +206,20 @@ internet explorer = iexplore
 
 
 [websites]
+My blog = http://tomnabarro.com/wp-admin/post-new.php
+Sound cloud = https://soundcloud.com/
 
 VIP bookings = https://portalvs.exostar.com/idprov/pages/home/dashboard.faces
 
 VPN work = http://rmrlvpn.roke.co.uk
+YouTube = http://YouTube.com
 github home = https://github.com/whIzz2000
 internet banking = https://www.hsbc.co.uk/1/3/personal/internet-banking
 knowbrainer forum = http://www.knowbrainer.com/pubforum/
 sitegen = sitegen.nl
+sound cloud = http://soundcloud.com
 speech computing forum = http://www.speechcomputing.com/tracker
 unimacro = http://qh.antenna.nl/unimacro
+voice coder = http://tech.groups.yahoo.com/group/VoiceCoder/
 webmail work = https://webmail.roke.co.uk
 work linux storage = http://unix-updates.roke.co.uk
