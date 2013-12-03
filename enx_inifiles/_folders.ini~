@@ -93,31 +93,27 @@ restore = <<windowrestore>>
 
 
 [folders]
-current project = u:/projects\enatt
+NatLink = nl:\NatLink
+Unimacro = nl:\Unimacro
+Vocola = nl:\Vocola
+current project = U:\projects\enatt
 cygwin = db:\cygwin
 cygwin home = db:\cygwin\home\tan
 documents = ~
 dropbox = db
 home win = hw
-home work = u:/
-linux software notes = u:/software\linux_software_notes
-literature = u:/literature
+home work = U:\
+linux software notes = U:\software\linux_software_notes
+literature = U:\literature
 macrosystem = nl:\Natlink\Macrosystem
-personal = u:/personal
+personal = U:\personal
 prime = x:\PRIME PTS Server
-projects = u:/projects
-software = u:/software
-software notes = u:/software\generic_software_notes
-speech related = u:/software\Speech related
-voice = u:/software\Speech related
+projects = U:\projects
+software = U:\software
+software notes = U:\software\generic_software_notes
+speech related = U:\software\Speech related
+voice = U:\software\Speech related
 win scripts = ws
-
-
-[folders nl]
-NatLink = NatLink
-Unimacro = Unimacro
-Vocola = Vocola
-nl = nl; Natlink
 
 
 [folders th]
@@ -125,7 +121,6 @@ CV = CV
 Dormant = Dormant
 IT = IT
 TC = TC
-conferences = conferences
 literature = literature
 personal = personal
 projects = projects
@@ -143,7 +138,7 @@ ignore file patterns = ~*; .*:
 track file extensions = .py; .doc; .xls; .txt; .ini;  .docx; .xlsx; .bat; .vnc
 
 track files virtualdrives = ws
-track folders virtualdrives = nl; th
+track folders virtualdrives = th
 
 
 [grammar name]
@@ -195,6 +190,7 @@ nl = C:/Natlink
 pf = C:/Program Files
 po = C:/Program Files (x86)
 rd = c:/
+th = U:/
 ws = c:/win scripts
 
 
@@ -217,7 +213,6 @@ github home = https://github.com/whIzz2000
 internet banking = https://www.hsbc.co.uk/1/3/personal/internet-banking
 knowbrainer forum = http://www.knowbrainer.com/pubforum/
 sitegen = sitegen.nl
-sound cloud = http://soundcloud.com
 speech computing forum = http://www.speechcomputing.com/tracker
 unimacro = http://qh.antenna.nl/unimacro
 voice coder = http://tech.groups.yahoo.com/group/VoiceCoder/
