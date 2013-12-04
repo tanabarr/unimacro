@@ -96,7 +96,9 @@ switchDirection = {
       "{Right}":   "{Left}"}
 
 modes = ['spell', 'command', 'numbers', 'normal', 'dictation', 'dictate']
-normalSet = ['test', 'reload', 'info', 'undo', 'redo', 'namephrase', 'batch',
+# removed because of duplication with vocola
+#normalSet = ['test', 'reload', 'info', 'undo', 'redo', 'namephrase', 'batch',
+normalSet = ['test', 'reload', 'info', 'namephrase', 'batch',
              'comment', 'mousefix', 'documentation', 'modes', 'variable', 'search',
              'highlight',         # for Shane, enable, because Vocola did not fix _anything yet
              'browsewith', 'hyphenatephrase']
