@@ -122,11 +122,13 @@ CV = CV
 Dormant = Dormant
 IT = IT
 TC = TC
+conferences = conferences
 literature = literature
 personal = personal
 projects = projects
 reference scripts = reference scripts
 software = software
+templates = templates
 th = th;
 
 
@@ -172,6 +174,7 @@ kilo = k
 
 
 [obsolete folders]
+downloads = P:\
 
 
 [obsolete virtualdrives]
