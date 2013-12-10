@@ -38,9 +38,6 @@ word = wordpad
 [files]
 Windows mail = C:\Program Files (x86)\Windows Live\Mail\wlmail.exe
 cygwin terminal = db:\cygwin\shortcut.lnk
-
-digitl pass = C:\Program Files\Vasco\DIGIPASS for Windows 5.0\DP4Windows.exe
-
 putty = po:/PuTTY/putty.exe
 search everything = po:/Everything/Everything.exe
 
@@ -122,14 +119,13 @@ CV = CV
 Dormant = Dormant
 IT = IT
 TC = TC
-conferences = conferences
 literature = literature
 personal = personal
 projects = projects
 reference scripts = reference scripts
 software = software
-templates = templates
 th = th;
+vimfiles = vimfiles
 
 
 [general]
@@ -171,6 +167,8 @@ kilo = k
 
 
 [obsolete files]
+
+digitl pass = C:\Program Files\Vasco\DIGIPASS for Windows 5.0\DP4Windows.exe
 
 
 [obsolete folders]
@@ -221,4 +219,5 @@ speech computing forum = http://www.speechcomputing.com/tracker
 unimacro = http://qh.antenna.nl/unimacro
 voice coder = http://tech.groups.yahoo.com/group/VoiceCoder/
 webmail work = https://webmail.roke.co.uk
+work cloud storage = https://cloud1.roke.co.uk
 work linux storage = http://unix-updates.roke.co.uk
