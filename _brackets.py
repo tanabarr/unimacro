@@ -87,12 +87,13 @@ class BracketsGrammar(ancestor):
 
     def gotResults(self, words, fullResults):
 
-        # see of something selected, leave clipboard intact 
-        natqh.saveClipboard()
-        keystroke('{ctrl+x}')  # try to cut the selection
-        contents = natlink.getClipboard().replace('\r','')
-        natqh.restoreClipboard()
-        
+##        # see of something selected, leave clipboard intact 
+#        natqh.saveClipboard()
+#        keystroke('{ctrl+x}')  # try to cut the selection
+#        contents = natlink.getClipboard().replace('\r','')
+#        natqh.restoreClipboard()
+	contents = ""        
+
         leftText = rightText = leftTextDict = rightTextDict = ""
         if contents:
             # strip from clipboard contents:
