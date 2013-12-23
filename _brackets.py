@@ -2,7 +2,7 @@ __version__ = "$Rev: 459 $ on $Date: 2011-10-20 11:36:09 +0200 (do, 20 okt 2011)
 # This file is part of a SourceForge project called "unimacro" see
 # http://unimacro.SourceForge.net and http://qh.antenna.nl/unimacro
 # (c) copyright 2003 see http://qh.antenna.nl/unimacro/aboutunimacro.html
-#    or the file COPYRIGHT.txt in the natlink\natlink directory 
+#    or the file COPYRIGHT.txt in the natlink\natlink directory
 #
 #  _brackets.py
 # written by: Quintijn Hoogenboom (QH softwaretraining & advies)
@@ -30,11 +30,11 @@ import string
 from actions import doAction as action
 from actions import doKeystroke as keystroke
 
-language = natqh.getLanguage()        
+language = natqh.getLanguage()
 
 ancestor = natbj.DocstringGrammar
 class BracketsGrammar(ancestor):
-    language = natqh.getLanguage()        
+    language = natqh.getLanguage()
     name = "brackets"
 
     def initialize(self):
@@ -53,7 +53,7 @@ class BracketsGrammar(ancestor):
     def gotResultsInit(self, words, fullResults):
         self.dictated = ''  # analysis of dgndictation or dgnletters
         self.pleft = self.pright = '' # the left and right parts of the brackets
-                
+
         if self.mayBeSwitchedOn == 'exclusive':
             print 'recog brackets, switch off mic: %s'% words
             natbj.SetMic('off')
@@ -87,12 +87,12 @@ class BracketsGrammar(ancestor):
 
     def gotResults(self, words, fullResults):
 
-##        # see of something selected, leave clipboard intact 
-#        natqh.saveClipboard()
+        # see of something selected, leave clipboard intact
+        natqh.saveClipboard()
+        action('<<cut>>')
 #        keystroke('{ctrl+x}')  # try to cut the selection
-#        contents = natlink.getClipboard().replace('\r','')
-#        natqh.restoreClipboard()
-	contents = ""        
+        contents = natlink.getClipboard().replace('\r','')
+        natqh.restoreClipboard()
 
         leftText = rightText = leftTextDict = rightTextDict = ""
         if contents:
@@ -107,10 +107,10 @@ class BracketsGrammar(ancestor):
 
         lSpacing = leftText + leftTextDict
         rSpacing = rightTextDict + rightText
-        
+
         if lSpacing:
             keystroke(lSpacing)
-        
+
         keystroke(self.pleft)
         if contents:
             #print 'contents: |%s|'% repr(contents)
@@ -128,7 +128,7 @@ class BracketsGrammar(ancestor):
 
     def stripFromBothSides(self, text):
         """strip whitespace from left side and from right side and return the three parts
-        
+
         input: text
         output: stripped, leftSpacing, rightSpacing
         """
@@ -143,12 +143,12 @@ class BracketsGrammar(ancestor):
             rightText = text[-rSpaces:]
         text = text.rstrip()
         return text, leftText, rightText
-        
+
 
     def fillDefaultInifile(self, ini):
         """filling entries for default ini file
 
-        """       
+        """
         if self.language == 'nld':
             ini.set('brackets', 'aanhalingstekens', '""')
             ini.set('brackets', 'kwoots', "''")
