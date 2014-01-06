@@ -18,7 +18,7 @@
 # GLOBALLY corrected spelling: seperator -> separator
 #                            : descendent -> descendant
 # added findMenuItem
-# adapted for NatSpeak/NatLink interaction, Quintijn Hoogenboom
+# adapted for NatSpeak/NatLink interaction, Quintijn Hoogenboomhallo
 # october 2009. (starting with watsup utilities)
 
 '''Windows GUI automation utilities.
@@ -71,16 +71,7 @@ hasBraces = re.compile (r'([{].+?[}])')
 BracesExtractKey = re.compile (r'^[{]((alt|ctrl|shift)[+])*(?P<k>[^ ]+?)( [0-9]+)?[}]$', re.I)
 
 ## Scintilla constants:
-SCI_SETTEXT = 2181
-SCI_GETTEXT = 2182
-SCI_SETSEL = 2160
-SCI_REPLACESEL = 2170
-SCI_GETLINE = 2153
-SCI_GETLINECOUNT = 2154
-SCI_GETFIRSTVISIBLELINE = 2152
-SCI_GETLINECOUNT = 2154 
-SCI_GETLINE = 2153
-SCI_GETTEXTLENGTH = 2183
+import scintillacon
 
 def findTopWindow(wantedText=None,
                   wantedClass=None):
@@ -222,16 +213,10 @@ def dumpWindow(hwnd):
     windows = [list(window) for window in windows]
     for window in windows:
         childHwnd, windowText, windowClass = window
-        if windowClass == "RichEdit20A":
-            id = win32gui.GetDlgCtrlID(childHwnd)
-            print 'hndle: %s, wText: %s, id: %x, class: %s'% (childHwnd,
-                                                              windowText, id,
-                                                              windowClass)
-            
         window_content = dumpWindow(childHwnd)
         if window_content:
             window.append(window_content)
-            
+       
     def dedup(thelist):
         '''De-duplicate deeply nested windows list.'''
         def listContainsSublists(thelist):
@@ -399,6 +384,8 @@ def findControls(topHwnd,
                             return windowClass == "Button"
                         buttons = findControl(optDialog, wantedText="Button")
     '''
+    if wantedText:
+        wantedText = _normaliseText(wantedText)
     def searchChildWindows(currentHwnd):
         results = []
         childWindows = []
@@ -415,9 +402,11 @@ def findControls(topHwnd,
             if descendantMatchingHwnds:
                 results += descendantMatchingHwnds
 
-            if wantedText and \
-                _normaliseText(windowText).find(_normaliseText) == -1:
-                continue
+            if wantedText:
+                if not windowText: continue
+                #print 'wanted: %s, window: %s'% (wantedText, windowText)
+                if _normaliseText(windowText).find(wantedText) == -1:
+                    continue
             if wantedClass and \
                not windowClass.find(wantedClass) == 0:
                 continue
@@ -791,7 +780,7 @@ def selectListboxItem(hwnd, item):
 def getFirstVisibleLine(hwnd, classname=None):
     
     if classname and classname == 'Scintilla':
-        getfirstvisibleline = SCI_GETFIRSTVISIBLELINE
+        getfirstvisibleline = scintillacon.SCI_GETFIRSTVISIBLELINE
     else:
         getfirstvisibleline = win32con.EM_GETFIRSTVISIBLELINE
     
@@ -812,7 +801,7 @@ def getEditText(hwnd, visible=False, classname=None):
     
     '''
     if classname and classname == 'Scintilla':
-        getline, getlinecount = SCI_GETLINE, SCI_GETLINECOUNT
+        getline, getlinecount = scintillacon.SCI_GETLINE, scintillacon.SCI_GETLINECOUNT
     else:
         getline, getlinecount = win32con.EM_GETLINE, win32con.EM_GETLINECOUNT
         
@@ -868,7 +857,7 @@ def setEditText(hwnd, text, append=False, classname=None):
     # Set the current selection range, depending on append flag
     # -1 (append) means clear selection and put at cursor position
     if classname and classname == "Scintilla":
-        setsel, replacesel = SCI_SETSEL, SCI_REPLACESEL
+        setsel, replacesel = scintillacon.SCI_SETSEL, scintillacon.SCI_REPLACESEL
     else:
         setsel, replacesel = win32con.EM_SETSEL, win32con.EM_REPLACESEL
     
@@ -892,7 +881,7 @@ def replaceEditText(hwnd, text, classname=None):
                     be become a a separate line in the control.
     '''
     if classname and classname == "Scintilla":
-        setsel, replacesel = SCI_SETSEL, SCI_REPLACESEL
+        setsel, replacesel = scintillacon.SCI_SETSEL, scintillacon.SCI_REPLACESEL
     else:
         setsel, replacesel = win32con.EM_SETSEL, win32con.EM_REPLACESEL
     
@@ -922,7 +911,7 @@ def appendEditText(hwnd, text, place="end", classname=None):
     place:          "end" at end of buffer, can also be "start"
     '''
     if classname and classname == "Scintilla":
-        replacesel = SCI_SETSEL, SCI_REPLACESEL
+        replacesel = scintillacon.SCI_SETSEL, scintillacon.SCI_REPLACESEL
     else:
         replacesel = win32con.EM_REPLACESEL
     
@@ -947,7 +936,7 @@ def getSelection(hndle, classname=None):
     """returns the start and end position of the selection.
     """
     if classname and classname == "Scintilla":
-        getsel= SCI_GETSEL
+        getsel= scintillacon.SCI_GETSEL
     else:
         getsel = win32con.EM_GETSEL
     
@@ -956,20 +945,32 @@ def getSelection(hndle, classname=None):
     en = win32gui.HIWORD(selInfo)
     return st, en
 
+def isVisible(hndle, classname=None):
+    """check if window/control is visible
+    """
+    if classname == 'Scintilla':
+        testnum = scintillacon.SCI_GETFIRSTVISIBLELINE
+    else:
+        return # not know how to do...
+        
+    v = win32gui.SendMessage(hndle, testnum)
+    return v
+
+
 def setSelection(hndle, lo, hi, classname=None):
 
     if classname and classname == "Scintilla":
-        setsel = SCI_SETSEL
+        setsel = scintillacon.SCI_SETSEL
     else:
         setsel = win32con.EM_SETSEL
 
     win32gui.SendMessage(hndle, setsel, lo, hi)
 
-def getLineNumber(hndle, charPos=-1):
-    """get the number of the line containing char or the selection
+def getLineNumber(hndle, charPos=-1, classname=None):
+    """get the number of the line containing char or the selection (1 based!)
     """
     num = win32gui.SendMessage(hndle, win32con.EM_LINEFROMCHAR, charPos, 0)
-    return num
+    return num + 1
 
 def getNumberOfLines(hndle, classname=None):
     """retrieves the number of lines in the buffer
@@ -977,7 +978,7 @@ def getNumberOfLines(hndle, classname=None):
     the total buflen fails, goes better with getRawTextLength (but is not accurate)
     """
     if classname and classname == "Scintilla":
-        getlinecount = SCI_GETLINECOUNT 
+        getlinecount = scintillacon.SCI_GETLINECOUNT 
     else:
         getlinecount = win32con.EM_GETLINECOUNT
     
@@ -1000,7 +1001,7 @@ def getTextLine(hndle, lineNum, classname=None):
     """
     global LINE_BUFFER_LENGTH, LINE_TEXT_BUFFER
     if classname and classname == "Scintilla":
-        getline= SCI_GETLINE
+        getline= scintillacon.SCI_GETLINE
     else:
         getline = win32con.EM_GETLINE
     
@@ -1025,7 +1026,7 @@ def getRawTextLength(hndle, classname=None):
     (this call takes nearly as much time as the getWindowTextAll call)
     """
     if classname and classname == "Scintilla":
-        gettextlength = SCI_GETTEXTLENGTH
+        gettextlength = scintillacon.SCI_GETTEXTLENGTH
     else:
         gettextlength = win32con.WM_GETTEXTLENGTH
     
@@ -1234,6 +1235,7 @@ def _windowEnumerationHandler(hwnd, resultList):
         # pass on window title and class name:
         text = win32gui.GetWindowText(hwnd)
         className = win32gui.GetClassName(hwnd)
+        #visible = win32gui.SendMessage(hwnd, 2491)
         resultList.append(  (hwnd, text, className) )   
     
     
@@ -1438,6 +1440,45 @@ def test_with_wordpad1():
     # result:
     # Hello, mate! Hello, this is a test
 
+def test_with_excel():
+    excelWindows = findTopWindows(wantedClass='XLMAIN')
+    for xl in excelWindows:
+        print "xl: %s"% xl
+        contents = dumpWindow(xl)
+        pprint.pprint(contents)
+        
+    
+    return excelWindows
+
+def test_with_frescobaldi():
+    frescWindows = findTopWindows(wantedClass='QWidget')
+    for fr in frescWindows:
+        text = win32gui.GetWindowText(fr)
+        if text.find("Frescobaldi") > 0:
+            print "fr: %s, text: %s"% (fr, text)
+
+            contents = dumpWindow(fr)
+            pprint.pprint(contents)
+            return fr
+
+def test_with_komodo_messages():
+    """also TCP model could be set up, this is the try via scintilla window and messages
+    
+    discussion on: http://community.activestate.com/node/10359
+    
+    """
+    
+    komodoWindows = findTopWindows(wantedClass='MozillaWindowClass')
+    for ko in komodoWindows:
+        contents = dumpWindow(ko)
+        if contents:
+            print "ko: %s"% ko
+            pprint.pprint(contents)
+        
+    # do "switch to wordpad" and dictate "this is a test"
+    # result:
+    # Hello, mate! Hello, this is a test
+
 def doHotshotTest(editControl, nTests=6):
     """do some testing on control.
     
@@ -1532,8 +1573,6 @@ if __name__ == '__main__':
     #    doHotshotTestOutsideField(editArea)
     
     #getFolderFromCabinetWClass(1180166)
-    
-    # test splitKeysString:
-    testString = "{END}{shift+HOME}%s{TAB}%s{END}{SHIFT+HOME}{ENTER}"% ("login", "password")
-    testList = splitKeysString(testString)
-    print 'testList: %s'% testList
+    #test_with_excel()
+    #test_with_komodo_messages()
+    test_with_frescobaldi()

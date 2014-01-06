@@ -1,4 +1,4 @@
-__version__ = "$Rev: 500 $ on $Date: 2013-07-07 19:13:31 +0200 (zo, 07 jul 2013) $ by $Author: quintijn $"
+__version__ = "$Rev: 526 $ on $Date: 2014-01-03 15:59:37 +0100 (vr, 03 jan 2014) $ by $Author: quintijn $"
 # This file is part of a SourceForge project called "unimacro" see
 # http://unimacro.SourceForge.net and http://qh.antenna.nl/unimacro
 # (c) copyright 2003 see http://qh.antenna.nl/unimacro/aboutunimacro.html
@@ -78,10 +78,14 @@ reLettersSpace = re.compile(r'^[a-zA-Z ]+$')
 Classes = ('ExploreWClass', 'CabinetWClass')
 
 # extra for sites (QH)
-siteRoot = 'd:\\projects\\sitegen'
+siteRoot = 'D:\\projects\\sitegen'
 if siteRoot and not os.path.isdir(siteRoot) :
 ##    print "grammar _folder: site commands skipped"
     siteRoot = ""
+else:
+    if not siteRoot in sys.path:
+        #print 'append to sys.path: %s'% siteRoot
+        sys.path.append(siteRoot)
 
 # some child windows have to behave as top window (specified in ini file):
 # note: title is converted to lowercase, only full title is recognised
@@ -105,19 +109,19 @@ class ThisGrammar(ancestor):
     optionalsitecommands = ['input', 'output', 'local', 'online']
     
     gramSpec = """
-<folder> exported = (folder) ({folders}|{subfolders}) [<foldercommands>]+;
-<disc> exported = (drive) {letters} [<foldercommands>]+;
-<thisfolder> exported = (this folder) <foldercommands>+;
+<folder> exported = folder ({folders}|{subfolders}|{folders}<foldercommands>|{subfolders}<foldercommands>);
+<disc> exported = drive ({letters} | {letters} <foldercommands>);  # add + later again
+<thisfolder> exported = this folder <foldercommands>;
 <foldercommands> = {foldercommands}| on {letters} |
                     (subversion) {subversionfoldercommands};
                    
-<folderup> exported = (folder up) [{n1-10}];
-<file> exported = (file) ({files}|{subfiles}) [dot {extensions}] [<filecommands>]+;
-<thisfile> exported = this file  <filecommands>+; 
+<folderup> exported = folder up|folder up {n1-10};
+<file> exported = file ({files}|{subfiles}|{files}<filecommands>|{subfiles}<filecommands>);  # add dot {extensions} later again
+<thisfile> exported = this file  <filecommands>; 
 <filecommands> = {filecommands}| (on {letters}) |
                 ('open with') {fileopenprograms}|
                 (subversion) {subversionfilecommands};
-<website> exported = (website) {websites} [<websitecommands>];
+<website> exported = website ({websites} | {websites} <websitecommands>);
 <thiswebsite> exported = (this website) <websitecommands>;
 <websitecommands> = ('open with') {websiteopenprograms};
 
@@ -127,10 +131,10 @@ class ThisGrammar(ancestor):
     # specific part in use by Quintijn:
     if siteRoot:
         gramSpec = gramSpec + """
-<site> exported = (site) {sites} [<sitecommands>]+;
-<siteshort> exported = (site) <sitecommands>+;
-<sitecommands> = {sitecommands} [<foldercommands>+|<websitecommands>] |
-                    (<foldercommands>+ | <websitecommands>);
+<site> exported = site ({sites}|{sites} <sitecommands>);
+<siteshort> exported = site <sitecommands>;
+<sitecommands> = {sitecommands} | {sitecommands} (<foldercommands>|<websitecommands>) |
+                    <foldercommands> | <websitecommands>;
         """
 
     def initialize(self):
@@ -761,7 +765,10 @@ class ThisGrammar(ancestor):
         try:
             site = __import__(siteName)
         except ImportError:
+            import traceback
             print 'cannot import module %s'% siteName
+            print traceback.print_exc()
+            print 'sys.path: %s'% sys.path 
             return
         if 'pagesopen' in dir(site):
             try:
@@ -1007,9 +1014,9 @@ class ThisGrammar(ancestor):
 
         assume foldercommands follow, so         
         """
-        #prog, title, topchild = natqh.getProgInfo()
+        #prog, title, topchild, windowHandle = natqh.getProgInfo()
         #hndle = natlink.getCurrentModule()[2]
-        #istop = topchild == 'top'
+        #istop = topchild, windowHandle == 'top'
         #if not istop:
         #    keystroke('{Shift+Tab}')
         #if self.activeFolder:
@@ -1032,12 +1039,12 @@ class ThisGrammar(ancestor):
         """ go up in hierarchy"""
         upn = self.getNumberFromSpoken(words[-1])
         #print 'folderup: %s'% upn
-        m = natut.getCurrentModule()
-        prog, title, topchild = natqh.getProgInfo(modInfo=m)
+        m = natlink.getCurrentModule()
+        prog, title, topchild, windowHandle = natqh.getProgInfo(modInfo=m)
         hndle = m[2]
         Iam2x = prog == '2xexplorer'
         IamExplorer = prog == 'explorer'
-        IamChild32770 = topchild == 'child' and win32gui.GetClassName(hndle) == '#32770'
+        IamChild32770 = topchild, windowHandle == 'child' and win32gui.GetClassName(hndle) == '#32770'
         if IamChild32770:
             self.className = '#32770'
         browser = prog in ['iexplore', 'firefox','opera', 'netscp']
@@ -1241,8 +1248,8 @@ class ThisGrammar(ancestor):
         if not os.path.isfile(f):
             self.DisplayMessage('file does not exist: %s'% f)
             return
-        m = natut.getCurrentModule()
-        prog, title, topchild = natqh.getProgInfo(modInfo=m)
+        m = natlink.getCurrentModule()
+        prog, title, topchild, windowHandle = natqh.getProgInfo(modInfo=m)
         mode = openWith = None
         istop = topchild == 'top'
 
@@ -1417,8 +1424,8 @@ class ThisGrammar(ancestor):
             print 'put path on clipboard: "%s"'% f
             natqh.setClipboard(f)
             return
-        m = natut.getCurrentModule()
-        prog, title, topchild = natqh.getProgInfo(modInfo=m)
+        m = natlink.getCurrentModule()
+        prog, title, topchild, windowHandle = natqh.getProgInfo(modInfo=m)
         Iam2x = prog == '2xexplorer'
         IamExplorer = prog == 'explorer'
         browser = prog in ['iexplore', 'firefox','opera', 'netscp']
@@ -1450,9 +1457,9 @@ class ThisGrammar(ancestor):
 ##                self.gotoInThisComputer(f)
                 return
         # now ready for a go:
-        m = natut.getCurrentModule()
+        m = natlink.getCurrentModule()
         hndle = thisHandle = m[2]
-        prog, title, topchild = natqh.getProgInfo(modInfo=m)
+        prog, title, topchild, windowHandle = natqh.getProgInfo(modInfo=m)
         Iam2x = prog == '2xexplorer'
         IamExplorer = prog == 'explorer'
         istop = topchild == 'top'
@@ -1464,7 +1471,6 @@ class ThisGrammar(ancestor):
             self.gotoInThisDialog(f, hndle, self.className)
             return
         elif QuickMode and self.className == 'CabinetWClass':
-            print 'goto in CabinetWClass: %s'% f
             self.gotoInThisComputer(f)
             return
 
@@ -1496,7 +1502,6 @@ class ThisGrammar(ancestor):
 
         # search folder titles (with Class name: CabinetWClass)
         LIST = getExplorerTitles()
-        #print 'LIST:', LIST
         if not LIST:
             self.openFolderDefault(f, *addOpts)
 
@@ -1621,7 +1626,7 @@ class ThisGrammar(ancestor):
                     spoken = trunk
                 spoken = self.spokenforms.correctLettersForDragonVersion(spoken)
                 D[spoken] = trunk
-                print 'set in sites: %s -> %s'% (trunk, spoken)
+                #print 'set in sites: %s -> %s'% (trunk, spoken)
                 self.ini.set('sites', trunk, spoken)
         return D
         

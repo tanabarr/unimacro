@@ -1,4 +1,4 @@
-"$Revision: 512 $, $Date: 2013-09-04 14:45:28 +0200 (wo, 04 sep 2013) $, $Author: quintijn $"
+"$Revision: 526 $, $Date: 2014-01-03 15:59:37 +0100 (vr, 03 jan 2014) $, $Author: quintijn $"
 # (unimacro - natlink macro wrapper/extensions)
 # (c) copyright 2003 Quintijn Hoogenboom (quintijn@users.sourceforge.net)
 #                    Ben Staniford (ben_staniford@users.sourceforge.net)
@@ -43,7 +43,7 @@ import natlinkstatus
 import natlinkcorefunctions
 natlinkstatus = natlinkstatus.NatlinkStatus()
 import RegistryDict  # for emergency get of UserDirectory!
-
+import autohotkeyactions
 DEBUG = 0
 
 # make old Dos style 8.3 filenames: (can be switched off)
@@ -294,7 +294,7 @@ def getProgName(modInfo=None):
     return getBaseNameLower(modInfo[0])
 
 def getProgInfo(modInfo=None):
-    """returns program info as tuple (prog, title, toporchild)
+    """returns program info as tuple (prog, title, toporchild, windowHandle)
 
     all lowercase, toporchild 'top' or 'child', or '' if no valid window    
     """
@@ -306,9 +306,9 @@ def getProgInfo(modInfo=None):
             toporchild = 'top'
         else:
             toporchild = 'child'
-        return prog, title, toporchild
+        return prog, title, toporchild, modInfo[2]
     else:
-        return '', '', 'empty'
+        return '', '', 'empty', modInfo[2]
 
 def getClassName(modInfo=None):
     """returns the class name of the foreground window
@@ -335,7 +335,7 @@ def matchWindow(criteria, modInfo=None, progInfo=None):
     'none'  (nothing matches)
     'empty' (matches when no valid progInfo is found)
 
-    progInfo is a tuple: (prog, title, toporchild),
+    progInfo is a tuple: (prog, title, toporchild, windowHandle),
     prog being the lower case name of the programme
     title being the lower case converted title
     toporchild being 'top' if top window, 'child' if child window,
@@ -357,7 +357,7 @@ def matchWindow(criteria, modInfo=None, progInfo=None):
         return
 
 
-    prog, title, toporchild = progInfo or getProgInfo(modInfo)
+    prog, title, toporchild, windowHandle = progInfo or getProgInfo(modInfo)
 
     if 'empty' in criteria and prog == '':
         return 1
@@ -390,7 +390,7 @@ def doPendingBringUps():
         return
     for p in pendingBringUps:
         try:
-            print 'try to do pending bringup: %s'% p
+            #print 'try to do pending bringup: %s'% p
             natlink.execScript(p)
         except:
             print 'delayed bringup does not work: %s'% p
@@ -405,7 +405,7 @@ def doPendingExecScripts():
         return
     for p in pendingExecScripts:
         try:
-            print 'try to do pending execScript: %s'% p
+            #print 'try to do pending execScript: %s'% p
             natlink.execScript(p)
         except:
             print 'does not work (in doPendingExecScripts): %s'% p
@@ -935,7 +935,7 @@ def endMouse():
         
 def rememberMouse():
     global mouseStartPosition
-    mouseStartPosition = natut.getCursorPos()
+    mouseStartPosition = natlink.getCursorPos()
 
 def cancelMouse():        
     global mouseStartPosition
@@ -1152,6 +1152,15 @@ iconDirectory = os.path.join(getUserDirectory(), 'icons')
 
 # this sets the icontray for several waiting situations:::
 def setTrayIcon(state=None, toolTip=None, comingFrom=None):
+    """activate the trayIcon depending on the state
+    
+    -If comingFrom is passed it can be either a instance (so the self of the calling grammar)
+    or a function/method.
+    -If comingFrom is an instance, a method "onTrayIcon" is taken (if possible) from the instance.
+    In those cases this function (onTrayIcon) is called if the user clicks on the trayIcon.
+    
+    
+    """
     #if getDNSVersion() >= 12:
     #    return # silently ignore this for Dragon 12
     global iconState
@@ -1175,19 +1184,30 @@ def setTrayIcon(state=None, toolTip=None, comingFrom=None):
         ## only if the 2 is not in the calling function yet...
         if iconState:
             iconName += '2'
-        
-    if comingFrom != None:
-        toolTip += "(cannot be canceled)"
-        try:
-            natlink.setTrayIcon(iconName,toolTip,comingFrom)
-        except natlink.NatError:
-            print 'cannot set tray icon "%s" (comingFrom: %s), try to clear'% (iconName, comingFrom)
-            natlink.setTrayIcon()
+    
+    if type(comingFrom) == types.InstanceType:
+        func = getattr(comingFrom, 'onTrayIcon', None)
+        if func:
+            toolTip += ' (grammar: %s)'% comingFrom.getName()
+    elif type(comingFrom) in [types.UnboundMethodType, types.FunctionType]:
+        func = comingFrom
+    elif comingFrom:
+        func = None
+        #print 'natqh.setTrayIcon, comingFrom not of correct type (%s): %s'% (comingFrom, type(comingFrom))
     else:
-        toolTip += "(cannot be canceled)"
+        func = None
+    
+    if func is None:
+        toolTip += " (cannot be canceled)"
         try:
             natlink.setTrayIcon(iconName,toolTip)
         except natlink.NatError:
+            natlink.setTrayIcon()
+    else:
+        try:
+            natlink.setTrayIcon(iconName,toolTip,func)
+        except natlink.NatError:
+            print 'cannot set tray icon "%s" (comingFrom: %s, func: %s), try to clear'% (iconName, comingFrom, func)
             natlink.setTrayIcon()
         
 
@@ -1449,6 +1469,20 @@ def SetForegroundWindow(h):
     """gets the window in front"""
     if not h:
         raise UnimacroError("no valid handle given for set foreground window: %s"% h)
+
+    if autohotkeyactions.ahk_is_active():
+        #result = autohotkeyactions.do_ahk_script("getintoforeground.ahk", hndle=h)
+        #result = autohotkeyactions.do_ahk_script("WinActivate, ahk_id  %hndle%", hndle=h)
+        result = autohotkeyactions.do_ahk_script("WinActivate, ahk_id  %s"% h)
+        for i in range(10):
+            newH = win32gui.GetForegroundWindow()
+            if newH == h:
+                if i:
+                    print 'got correct foreground window after %s Waits'% i
+                return 1
+            Wait()
+        print 'setting foreground window "%s" with AutoHotkey failed, proceed with win32gui'% h
+            
     oldH = rememberWindow()
     if h == oldH:
         return 1
@@ -1465,12 +1499,12 @@ def SetForegroundWindow(h):
             print 'could not bring to foreground: %s'% h
         else:
             raise
-    print 'SetForeground window, go via dragonbar first and try again'
+    #print 'SetForeground window, go via dragonbar first and try again'
     natlink.execScript('SendSystemKeys "{numkey*}"')
     Wait()
     natlink.execScript('SendSystemKeys "{esc}"')
     Wait()
-    print 'finally go to wanted handle: %s'% h
+    #print 'finally go to wanted handle: %s'% h
     try:
         win32gui.SetForegroundWindow(h)
     except pywintypes.error, details:
@@ -1684,9 +1718,10 @@ monitorfunctions.monitor_info()
 screenRect = monitorfunctions.VIRTUAL_SCREEN[:]
 screenWidth, screenHeight, screenXMin, screenYMin, screenXMax, screenYMax = getRectData(screenRect)
 try:
-    #print 'getUserDirectory: %s'% getUserDirectory()
-    #print 'getLanguage: %s'% getLanguage()
-    #print 'getUser: %s'% getUser()
+    print 'getUserDirectory: %s'% getUserDirectory()
+    print 'getUser: %s'% getUser()
+    print 'getLanguage: %s'% getLanguage()
+
     logFolder = os.path.join(getUserDirectory(), getLanguage() + "_log", getUser())
     utilsqh.createFolderIfNotExistent(logFolder)
 except natlink.NatError:

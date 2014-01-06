@@ -1,7 +1,7 @@
 """Unimacro grammar that controls/shows/traces state of other grammars
 
 """
-__version__ = "$Rev: 507 $ on $Date: 2013-08-06 12:08:38 +0200 (di, 06 aug 2013) $ by $Author: quintijn $"
+__version__ = "$Rev: 515 $ on $Date: 2013-10-24 09:34:14 +0200 (do, 24 okt 2013) $ by $Author: quintijn $"
 # This file is part of a SourceForge project called "unimacro" see
 # http://unimacro.SourceForge.net and http://qh.antenna.nl/unimacro
 # (c) copyright 2003 see http://qh.antenna.nl/unimacro/aboutunimacro.html
@@ -106,20 +106,28 @@ class UtilGrammar(ancestor):
         specials = "|" + '|'.join(specialList)
     else:
         specials = ""
-    gramSpec = """
-<show> exported = show ('all grammars' | 'active grammars' |
-                        ([grammar|inifile] {gramnames}) 
+    gramSpec = ["""
+<show> exported = show ((all|active) grammars |
+                        {gramnames} | (grammar|inifile) {gramnames}
                          """+ specials + """);
-<edit> exported = edit ([grammar|inifile] {gramnames}"""+ specials +""");
-<trace> exported = (trace) [on|off| {tracecount}]
-              ('all grammars' | [grammar] {gramnames}"""+ specials +""") [on|off| {tracecount}] ;
-<switch> exported = switch [on|off]
-              ('all grammars' | [grammar] {gramnames})[on|off];
-<showexclusive> exported = show exclusive [grammars];
-<resetexclusive> exported = reset exclusive [grammars];
+<edit> exported = edit ({gramnames}| (grammar|inifile) {gramnames}"""+ specials +""");
+<switch> exported = switch ((on|off) ((all grammars)|{gramnames}|grammar {gramnames})|
+                            ((all grammars)|{gramnames}|grammar {gramnames})(on|off));
+<showexclusive> exported = show (exclusive |exclusive grammars);
+<resetexclusive> exported = reset (exclusive | exclusive grammars);
 <checkalphabet> exported = check alphabet;
 <message> exported = {message};
-    """
+    """]
+    
+    if specials:
+        specials2 = specials[1:]  # remove initial "|" (at show it is  "| actions | 'spoken forms'", here it is
+                                  #     "actions | 'spoken forms'" only, because gramnames etc are not implemented
+                                  #     for tracing)
+        traceSpecial = """<trace> exported = trace (("""+ specials2 +""") |
+                              ((on|off| {tracecount})("""+ specials2 +""")) |
+                              (("""+ specials2 +""") (on|off|{tracecount}))) ;"""
+        gramSpec.append(traceSpecial) # add trace for actions of spoken forms (latter not implemented)
+
 
     Mode = Normal
     LastMode = Normal
@@ -130,12 +138,12 @@ class UtilGrammar(ancestor):
         global loadedNames
         # temp set allResults to 0, disabling the messages trick:
         if not self.load(self.gramSpec, allResults=showAll):
-        #if not self.load(self.gramSpec):
             return None
         natbj.RegisterControlObject(self)
         self.emptyList('message')
         self.setList('gramnames', natbj.loadedGrammars.keys())
-        self.setList('tracecount', tracecount)
+        self.setNumbersList('tracecount', tracecount)
+        
         self.activateAll()
         self.setMode(Normal)
         self.startExclusive = self.exclusive # exclusive state at start of recognition!
@@ -267,6 +275,12 @@ class UtilGrammar(ancestor):
 
     def gotResults_trace(self,words,fullResults):
         print 'control, trace: %s'% words
+        traceNumList = self.getNumbersFromSpoken(words) # returns a string or None
+        if traceNumList:
+            traceNum = int(traceNumList[0])
+        else:
+            traceNum = None
+
         if self.hasCommon(words, 'actions'):
             if self.hasCommon(words, 'show'):
                 actions.debugActionsShow()
@@ -274,8 +288,8 @@ class UtilGrammar(ancestor):
                 actions.debugActions(0)
             elif self.hasCommon(words, 'on'):
                 actions.debugActions(1)
-            elif words[-1] in tracecount:
-                actions.debugActions(int(words[-1]))
+            elif traceNum:
+                actions.debugActions(traceNum)
             else:
                 actions.debugActions(1)
         elif self.hasCommon(words, 'spoken forms'):
@@ -468,8 +482,8 @@ class UtilGrammar(ancestor):
         
         All=1
         if len(name)>0:
-            All=self.hasCommon(words, 'all grammars')
-        Active = self.hasCommon(words, 'active grammars')
+            All=self.hasCommon(words, 'all')
+        Active = self.hasCommon(words, 'active')
         if Active:
             All = 0
         elif All:

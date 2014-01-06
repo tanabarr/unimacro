@@ -1,4 +1,4 @@
-__version__ = "$Rev: 512 $ on $Date: 2013-09-04 14:45:28 +0200 (wo, 04 sep 2013) $ by $Author: quintijn $"
+__version__ = "$Rev: 515 $ on $Date: 2013-10-24 09:34:14 +0200 (do, 24 okt 2013) $ by $Author: quintijn $"
 # This file is part of a SourceForge project called "unimacro" see
 # http://unimacro.SourceForge.net and http://qh.antenna.nl/unimacro
 # (c) copyright 2003 see http://qh.antenna.nl/unimacro/aboutunimacro.html
@@ -96,9 +96,7 @@ switchDirection = {
       "{Right}":   "{Left}"}
 
 modes = ['spell', 'command', 'numbers', 'normal', 'dictation', 'dictate']
-# removed because of duplication with vocola
-#normalSet = ['test', 'reload', 'info', 'undo', 'redo', 'namephrase', 'batch',
-normalSet = ['test', 'reload', 'info', 'namephrase', 'batch',
+normalSet = ['test', 'reload', 'info', 'undo', 'redo', 'namephrase', 'batch',
              'comment', 'mousefix', 'documentation', 'modes', 'variable', 'search',
              'highlight',         # for Shane, enable, because Vocola did not fix _anything yet
              'browsewith', 'hyphenatephrase']
@@ -356,7 +354,7 @@ class ThisGrammar(ancestor):
 
     def gotResults_browsewith(self,words,fullResults):
         """show page in another browser"""
-        m = natut.getCurrentModule()
+        m = natlink.getCurrentModule()
         prog, title, topchild = natqh.getProgInfo(modInfo=m)
         Iam2x = prog == '2xexplorer'
         IamExplorer = prog == 'explorer'
@@ -551,7 +549,7 @@ TT { font-family: lucidatypewriter, lucida console, courier }
         T = []
         extra = []
         if self.hasCommon(words,'window'):
-            m = natut.getCurrentModule()
+            m = natlink.getCurrentModule()
             hwnd = m[2]
             p = natqh.getProgInfo(m)
             toporchild = p[2]
@@ -559,6 +557,7 @@ TT { font-family: lucidatypewriter, lucida console, courier }
             T.append('0 program: %s'% p[0])
             T.append('1 window title: %s'% p[1])
             T.append('2 toporchild: %s'% p[2])
+            T.append('3 window handle: %s'% p[3])
             if toporchild == 'top':
                 overrule = actions.topWindowBehavesLikeChild(m)
                 if overrule:
@@ -625,7 +624,7 @@ TT { font-family: lucidatypewriter, lucida console, courier }
             natqh.Wait(0.1)
         keystroke('{ctrl+x}')
         natqh.Wait(0.1)
-        t = natut.getClipboard()
+        t = natlink.getClipboard()
         # put spaces if they were collected on the clipboard:
         while t and t[0] == " ":
             t = t[1:]
@@ -702,7 +701,7 @@ TT { font-family: lucidatypewriter, lucida console, courier }
         else:
             ts = time.strftime("%d%m%y_", time.localtime(time.time()))
 
-        m = natut.getCurrentModule()
+        m = natlink.getCurrentModule()
         if natqh.matchModule('pythonwin', modInfo=m):
             com = "#" + name + ts
         elif natqh.matchModule('textpad', 'html', modInfo=m):

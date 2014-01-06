@@ -1,4 +1,4 @@
-__version__ = "$Revision: 512 $, $Date: 2013-09-04 14:45:28 +0200 (wo, 04 sep 2013) $, $Author: quintijn $"
+__version__ = "$Revision: 523 $, $Date: 2013-12-25 13:17:06 +0100 (wo, 25 dec 2013) $, $Author: quintijn $"
 # (unimacro - natlink macro wrapper/extensions)
 # (c) copyright 2003 Quintijn Hoogenboom (quintijn@users.sourceforge.net)
 #                    Ben Staniford (ben_staniford@users.sourceforge.net)
@@ -42,6 +42,7 @@ import win32api, win32gui, win32con, win32com.client
 import inivars
 import htmlentitydefs
 import monitorfunctions, messagefunctions
+import autohotkeyactions # for AutoHotkey support
 natut = __import__('natlinkutils')
 natqh = __import__('natlinkutilsqh')
 import natlink
@@ -49,7 +50,9 @@ import natlinkcorefunctions # extended environment variables....
 import time, datetime
 import subprocess  # for calling a ahk script
 
-external_actions_modules = {}  # per application, None if tried but not present...
+external_actions_modules = {}  # the modules, None if not available (for prog)
+external_action_instances = {} # the instances, None if not available (for handle)
+     
 class ActionError(Exception): pass
 class KeystrokeError(Exception): pass
 class UnimacroError(Exception): pass
@@ -72,7 +75,7 @@ if unimacroDirectory not in sampleBases:
                    
 sampleDirectories = [os.path.join(base, 'sample_ini') for base in sampleBases if
                      os.path.isdir(os.path.join(base, 'sample_ini'))]
-      
+
 if not sampleDirectories:
     print '\nNo Unimacro sample directory not found: %s\nCHECK YOUR CONFIGURATION!!!!!!!!!!!!!!!!\n'
 #else:
@@ -93,7 +96,6 @@ if not os.path.isdir(userDirectory):
     except OSError:
         print 'cannot make inifiles directory: %s'% userDirectory
 ####
-
 
 inifile = os.path.join(userDirectory, 'actions.ini')
 oldversioninifile = os.path.join(baseDirectory, 'actions.ini')
@@ -210,7 +212,7 @@ def doAction(action, completeAction=None, pauseBA=None, pauseBK=None,
         if progInfo == None:
             progInfo = natqh.getProgInfo()
             #D('new progInfo: %s'% repr(progInfo))
-        prog, title, toporchild = progInfo
+        prog, title, topchild, windowHandle = progInfo
         if sectionList == None:
             sectionList = getSectionList(progInfo)
         if pauseBA == None:
@@ -261,15 +263,15 @@ def doAction(action, completeAction=None, pauseBA=None, pauseBK=None,
     # now perform the action
     # check if action consists of several parts:
     # assume progInfo is now available:
-    prog, title, toporchild = progInfo
+    prog, title, topchild, windowHandle = progInfo
     
     if metaAction.match(action):  # exactly a meta action, <<....>>
         a = metaAction.match(action).group(1)
-        aNew = getMetaAction(a, sectionList, prog)
+        aNew = getMetaAction(a, sectionList, progInfo)
         if type(aNew) == types.TupleType:
             # found function
             func, number = aNew
-            if type(func) == types.FunctionType:
+            if type(func) in (types.FunctionType, types.UnboundMethodType):
                 func(number)
                 return 1
             else:
@@ -392,8 +394,8 @@ def doKeystroke(action, hardKeys=None, pauseBK=None,
     #print 'doing keystroke: {%s'% action[1:]
     if not action:
         return
-    ## bugfix as proposed by Frank Olaf:
-    action = "{shift}" + action
+    ### bugfix as proposed by Frank Olaf:
+    #action = "{shift}" + action
 
     if not ini:
         checkForChanges = 1
@@ -484,13 +486,15 @@ def doKeystroke(action, hardKeys=None, pauseBK=None,
     if hasBraces.search(action):
         keystrokeList = hasBraces.split(action)
         for k in keystrokeList:
-           if debug > 5: D('part of keystrokes: |%s|' % k)        
-           doKeystroke(k, hardKeys=hardKeys, pauseBK = 0)
+            if debug > 5: D('part of keystrokes: |%s|' % k)
+            if not k: continue
+            #print 'recursing? : %s (%s)'% (k, keystrokeList)
+            doKeystroke(k, hardKeys=hardKeys, pauseBK = 0)
     else:
         if debug > 5: D('no braces keystrokes: |%s|' % action)
         natut.playString(action, 0x100)
         
-def getMetaAction(a, sectionList, prog):
+def getMetaAction(a, sectionList, progInfo):
     m = metaNumber.search(a)
     if m:
         number = m.group(1)
@@ -502,14 +506,16 @@ def getMetaAction(a, sectionList, prog):
         number = 0
         actionName = a.replace(' ', '')
     # try via actions_prog module:
-    get_external_module(prog)
-    if external_actions_modules[prog]:
-        ext_module = external_actions_modules[prog]
-        func = getattr(ext_module, actionName, None)
+    ext_instance = get_instance_from_progInfo(progInfo)
+    if ext_instance:
+        funcName = 'metaaction_%s'% actionName
+        func = getattr(ext_instance,funcName, None)
         if func:
             if debug > 1:
-                D('action by function from prog %s: |%s| arg: %s'% (prog, actionName, number))
-            return func, number
+                D('action by function from prog %s: |%s|(%s), arg: %s'% (prog, actionName, funcName, ext_instance,number))
+            result = func, number
+            if result: return result
+            # otherwise go on with "normal" meta actions...
 
     # no result in actions_prog module, continue normal way:
     if debug > 5: D('search for action: |%s|, sectionList: %s' %
@@ -538,7 +544,7 @@ natspeakCommands = ['ActiveControlPick', 'ActiveMenuPick', 'AppBringUp', 'AppSwa
 def getSectionList(progInfo=None):
     if not progInfo:
         progInfo = natqh.getProgInfo()
-    prog, title, toporchild = progInfo
+    prog, title, topchild, windowHandle = progInfo
     if debug > 5: D('search for prog: %s and title: %s' %
                     (prog, title))
     l = ini.getSectionsWithPrefix(prog, title) + \
@@ -646,7 +652,7 @@ def getFromIni(keyword, default='',
         return ''
     if sectionList == None:
         if progInfo == None: progInfo = natqh.getProgInfo()
-        prog, title, toporchild = progInfo
+        prog, title, topchild, windowHandle = progInfo
         sectionList = ini.getSectionsWithPrefix(prog, title) + \
                       ini.getSectionsWithPrefix('default', title)
         if debug > 5: D('getFromIni, sectionList: |%s|' % sectionList)
@@ -659,14 +665,46 @@ def get_external_module(prog):
     
     if module not there, put None in this external_actions_modules dict
     """
+    #print 'ask for program: %s'% prog
     if prog in external_actions_modules:
-        return # was called already
+        return external_actions_modules[prog]
     try:
-        mod = __import__('actions%s'% prog)
+        modname = '%s-actions'% prog
+        _temp = __import__('actionclasses', fromlist=[modname])
+        mod = getattr(_temp, modname)
         external_actions_modules[prog] = mod
-    except ImportError:
+        print 'get_external_module, found actions module: %s'% modname
+        return mod
+    except AttributeError:
+        import traceback
         external_actions_modules[prog] = None
-        
+        print 'get_external_module, no module found for: %s'% prog
+
+ 
+ 
+def get_instance_from_progInfo(progInfo):
+    """return the correct intances for progInfo
+    """
+    prog, title, topOrChild, handle = progInfo
+    if handle in external_action_instances:
+        instance = external_action_instances[handle]
+        instance.update(progInfo)
+        return instance
+    
+    mod = get_external_module(progInfo[0])
+    if not mod:
+        return # no module, no instance
+    classRef = getattr(mod, '%sActions'% prog.capitalize())
+    if classRef:
+        instance = classRef(progInfo)
+        instance.update(progInfo)
+        print 'new instance for actions for prog: %s, handle: %s'% (prog, handle)
+    else:
+        instance = None
+    external_action_instances[handle] = instance
+
+    return instance
+    
 
 
 def doCheckForChanges(previousIni=None):
@@ -720,7 +758,7 @@ def showActions(progInfo=None, lineLen=60, sort=1, comingFrom=None, name=None):
     
     sectionList = getSectionList(progInfo)
 
-    l = ['actions for program: %s\n\twindow title: %s (toporchild: %s)'% progInfo,
+    l = ['actions for program: %s\n\twindow title: %s (topchild: %s, windowHandle: %s)'% progInfo,
          '\tsection list: %s'% sectionList,
          '']
     l.append(ini.formatKeysOrderedFromSections(sectionList,
@@ -788,119 +826,14 @@ def do_TEST(*args):
     x, y = natqh.testmonitorinfo(args[0], args[1])
     print 'in do_test: ', x, y
 
-ahkexe = None
-ahkscriptfolder = None
 def do_AHK(script):
     """try autohotkey integration
     """
-    if ahkexe is None:
-        GetAhkExe() 
-    if not ahkexe:
-        raise ValueError("cannot run AHK action, autohotkey.exe not found")
-    if ahkscriptfolder is None:
-        GetAhkScriptFolder()
-        
-    if not ahkscriptfolder:
-        raise IOError("no folder for AutoHotkey scripts found")
-   
-    #print 'AHK with script: %s'% script
-    if script.endswith(".ahk"):
-        scriptPath = os.path.join(ahkscriptfolder, script)
-        if os.path.isfile(scriptPath):
-            scriptText = open(scriptPath, 'r').read()
-            if scriptText.find(r'%hndle%') >= 0:
-                print 'take scriptText for replacing %%hndle%%: %s'% scriptText
-                script = scriptText
-            else:
-                call_ahk_script_path(scriptPath)
-                return
-        else:
-            do_MSG("action AHK, not an existing script file: %s (%s)"% (script, scriptPath))
-            return
-    if script.find(r"%hndle%") >= 0:
-        winHndle = win32gui.GetForegroundWindow()
-        script = script.replace("%hndle%", "%%%s%%"%winHndle)
-        print 'substituted script: %s'% script
-    print 'AHK with script: %s'% script
-    scriptPath = os.path.join(ahkscriptfolder, 'tempscript.ahk')
-    open(scriptPath, 'w').write(script+'\n')
-    call_ahk_script_path(scriptPath)
-    #call_ahk_script_text(script)
- 
-    #script += "\nExitApp"
-    #print 'do script via dll: %s'% script
-    #ahk = win32com.client.Dispatch("AutoHotkey.Script")
-    #    
-    #ahk.ahktextdll(script)
-    
-def GetAhkExe():
-    """try to get executable of autohotkey.exe, if not there, empty string is put in ahkexe
-    
-    also make subdirectory AutoHotkey of the documents directory  the ahk
-    """
-    global ahkexe
-
-    pf = natlinkcorefunctions.getExtendedEnv("PROGRAMFILES")
-    if pf.find('(x86)')>0:
-        # 64 bit:
-        pf = natlinkcorefunctions.getExtendedEnv("PROGRAMW6432")  # the old pf directory
-    if not os.path.isdir(pf):
-        raise IOError("cannot find (old style) program files directory: %s"% pf)
-    
-    
-    ahk = os.path.join(pf, "autohotkey", "autohotkey.exe")
-    if os.path.isfile(ahk):
-        ahkexe = ahk
-        #print 'AutoHotkey found, %s'% ahkexe
-    else:
-        ahkexe = ""
-        print 'AutoHotkey not found on this computer (%s)'% ahkexe
-    
-def GetAhkScriptFolder():
-    """try to get AutoHotkey folder as subdirectory of PERSONAL
-    
-    create if non-existent.
-    
-    """
-    global ahkscriptfolder
-
-    personal = natlinkcorefunctions.getExtendedEnv("PERSONAL")
-    if not os.path.isdir(personal):
-        raise IOError('cannot find PERSONAL (documents) directory: %s\nPlease check environment variable "PERSONAL", this one should be the same as "~" or "HOME"'% personal)
-    
-    ahkscriptfolder = os.path.join(personal, "AutoHotkey")
-    if os.path.isdir(ahkscriptfolder):
+    result = autohotkeyactions.do_ahk_script(script)
+    if isinstance(result, basestring):
+        do_MSG(result)
         return
-    print 'try to create the folder %s'% ahkscriptfolder
-    os.mkdir(ahkscriptfolder)
-    if os.path.isdir(ahkscriptfolder):
-        return
-    raise IOError("GetAhkScriptFolder, cannot create AutoHotkey scripts folder: %s\nPlease try to do so yourself."% ahkscriptfolder)
-
-
-def call_ahk_script_path(scriptPath):
-    """call the specified ahk script
-    
-    use the global variable ahkexe as executable
-    
-    """
-    subprocess.call([ahkexe, scriptPath, ""])
-
-def call_ahk_script_text(scriptText):
-    """call the specified ahk script as a text string
-    
-    use the com module, does not work (yet)
-    
-    """
-    script = scriptText
-    if not script.strip().endswith("ExitApp"):
-        script += "\nExitApp"
-    print 'do script via dll: %s'% script
-    ahk = win32com.client.Dispatch("AutoHotkey.Script")
-        
-    ahk.ahktextdll(script)
- 
-
+    return result
 
 # HeardWord (recognition mimic), convert arguments to list:
 def do_HW(*args):
@@ -1158,7 +1091,6 @@ def do_RTW():
     natqh.returnToWindow()
     return 1
 
-   
 def do_SELECTWORD(count=1, direction=None):
     """select the word under the cursor"""
     print 'try to select %s word(s) under cursor (direction: %s)'% (count, direction)
@@ -1408,7 +1340,7 @@ def do_MSG(*args, **kw):
 def do_TASK(number=None):
     """switch to task with number"""
 ##    print 'action: goto task: %s'% number
-    prog, title, toporchild = natqh.getProgInfo()
+    prog, title, topchild, windowHandle = natqh.getProgInfo()
     if prog == 'explorer' and not title:
         doKeystroke('{esc}')
         natqh.shortWait()
@@ -1549,7 +1481,7 @@ def topWindowBehavesLikeChild(modInfo):
         #print 'topchildDict: %s'% topchildDict
     if topchildDict == {}:
         return
-    prog, title, dummy = natqh.getProgInfo(modInfo)
+    prog, title, dummy, handle = natqh.getProgInfo(modInfo)
     return matchProgTitleWithDict(prog, title, topchildDict)
             
 def childWindowBehavesLikeTop(modInfo):
@@ -1564,7 +1496,7 @@ def childWindowBehavesLikeTop(modInfo):
         #print 'childtopDict: %s'% childtopDict
     if childtopDict == {}:
         return
-    prog, title, dummy = natqh.getProgInfo(modInfo)
+    prog, title, dummy, handle = natqh.getProgInfo(modInfo)
     return matchProgTitleWithDict(prog, title, childtopDict)
 
 def matchProgTitleWithDict(prog, title, Dict):
@@ -1845,7 +1777,7 @@ def putCursor():
 def findCursor():
     """find the previous entered cursor text"""
     doAction('<<startsearch>>; "%s"; VW; <<searchgo>>'% cursorText)
-    prog, title, dummy = natqh.getProgInfo()
+    prog, title, dummy, handle = natqh.getProgInfo()
     if prog == 'emacs':
         doAction("{shift+left %s}"% len(cursorText))
     doAction("CLIPSAVE; <<cut>>")
@@ -1968,7 +1900,7 @@ def UnimacroBringUp(app, filepath=None):
         appTitle = ini.get("bringup %s"% app, "title") or None
         appClass = ini.get("bringup %s"% app, "class") or None
     
-        prog, title, topOrChild = natqh.getProgInfo()
+        prog, title, topOrChild, handle = natqh.getProgInfo()
         progFull, titleFull, hndle = natlink.getCurrentModule()
     
         if windowCorrespondsToApp(app, appName, prog, title):
@@ -1987,7 +1919,7 @@ def UnimacroBringUp(app, filepath=None):
                     print 'could not bring to foreground: %s, exit action'% hndle
                     
                 if do_WTC():
-                    prog, title, handle = natqh.getProgInfo()
+                    prog, title, topOrChild, handle = natqh.getProgInfo()
                     if prog == appName:
                         return 1
             except:
@@ -2007,7 +1939,7 @@ def UnimacroBringUp(app, filepath=None):
     #                print 'get window %s to foreground failed'% hndle
     #                
     #            natqh.Wait(0.1)
-    #            prog, title, topOrChild = natqh.getProgInfo()
+    #            prog, title, topOrChild, handle = natqh.getProgInfo()
     #            progFull, titleFull, hndle2 = natlink.getCurrentModule()
     #            if hndle == hndle2:
     #                #print 'OK, setting |%s|, currentModule: %s'% (app, repr(natlink.getCurrentModule()))
@@ -2020,7 +1952,7 @@ def UnimacroBringUp(app, filepath=None):
     #print 'unimacrobringup: name: %s, app: %s, args: %s (filepath: %s)'% (appName, appPath, appArgs, filepath)
     return natqh.AppBringUp(appName, appPath, appArgs, appWindowStyle, appDirectory)
 #    if do_WTC():
-#        prog, title, topOrChild = natqh.getProgInfo()
+#        prog, title, topOrChild, handle = natqh.getProgInfo()
 #        progFull, titleFull, hndle = natlink.getCurrentModule()
 ###        print 'app: %s, appName: %s, got prog: %s'% (app, appName, prog)
 #        if prog == appName:
@@ -2062,7 +1994,7 @@ def dragonpadBringUp():
     natlink.recognitionMimic(["Start", "DragonPad"])
     while i < 10:
         i += 1
-        prog, title, topOrChild = natqh.getProgInfo()
+        prog, title, topOrChild, handle = natqh.getProgInfo()
         if windowCorrespondsToApp('dragonpad', 'natspeak', prog, title):
             break
         do_W(0.1)
@@ -2072,13 +2004,14 @@ def dragonpadBringUp():
         return
     return 1
         
-    
-
 def messagesBringUp():
     """switch to the messages from python macros window"""
+    if autohotkeyactions.ahk_is_active():
+        do_AHK("showmessageswindow.ahk")
+        return 1
+    
     if natqh.switchToWindowWithTitle('Messages from python macros'):
         return 1
-    print "messages window"
     if not natqh.switchToWindowWithTitle('Messages from python macros'):
         raise UnimacroError("cannot bring messages window to front")
     return 1
@@ -2088,7 +2021,7 @@ def voicecodeBringUp():
     """assume emacs is in front, check the other necessary things"""
     if debug: D('starting special: voicecodeBringUp')
 
-    prog, title, handle = natqh.getProgInfo()
+    prog, title, topOrChild, handle = natqh.getProgInfo()
     if prog != voicecodeApp:
         if not UnimacroBringUp(voicecodeApp):
             D('did not bringup voicecodeApp: %s'% voicecodeApp)
@@ -2129,7 +2062,7 @@ def startVoiceCoder(nTrie=2):
 
     identified by "(yak" (case insensitive)
     """
-    prog, title, handle = natqh.getProgInfo()
+    prog, title, topOrChild, handle = natqh.getProgInfo()
     if prog != voicecodeApp:
         print 'startVoiceCoder needs correct app first: %s, not: %s'% (voicecodeApp, prog)
         return
@@ -2141,7 +2074,7 @@ def startVoiceCoder(nTrie=2):
         if debug: D('Try to get vcode-mode: %s'% i)
         doAction("EMACS vcode-mode")
         do_W(0.5)
-        prog, title, handle = natqh.getProgInfo()
+        prog, title, topOrChild, handle = natqh.getProgInfo()
         if title.find("(yak ") >= 0:
             if debug: D('found voicecoder')
             return 1
@@ -2192,7 +2125,7 @@ def getPathOfOpenFile():
     used for switching from eg pythonwin to emacs and back
     """
     fileName = None
-    prog, title, handle = natqh.getProgInfo()
+    prog, title, topOrChild, windowHandle = natqh.getProgInfo()
     if prog == 'pythonwin':
         doKeystroke("{ctrl+r}")
         doAction("W")
@@ -2248,4 +2181,3 @@ else:
         os.remove(debugFile)
     except OSError:
         pass
-

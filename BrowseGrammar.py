@@ -1,4 +1,4 @@
-__version__ = "$Revision: 443 $, $Date: 2011-08-23 14:24:53 +0200 (di, 23 aug 2011) $, $Author: quintijn $"
+__version__ = "$Revision: 514 $, $Date: 2013-09-25 15:05:01 +0200 (wo, 25 sep 2013) $, $Author: quintijn $"
 # (unimacro - natlink macro wrapper/extensions)
 # (c) copyright 2003 Quintijn Hoogenboom (quintijn@users.sourceforge.net)
 #                    Ben Staniford (ben_staniford@users.sourceforge.net)
@@ -46,6 +46,7 @@ The browser is based upon a tree dialog, adapted from the hiertest demo
 
 import os,string,copy,re
 import natlinkutils
+import gramparser  # for splitApartLines
 
 ListCode = 0    # List
 SeqCode = 1     # sequence
@@ -424,11 +425,11 @@ def ParseRuleDefinitions(name,stack,Parser,ParserInfo,Lists,Dicts):
 def ParseGrammarDefinitions(gramSpec,gramName,Lists,Dicts,activeRules,All=1, Exclusive=0,
                             exclusiveState=0):
     if type(gramSpec)!=type([]): gramSpec=[gramSpec]    
-    natlinkutils.splitApartLines(gramSpec)
+    gramparser.splitApartLines(gramSpec)
 ##    Parser = natlinkutils.GramParser(gramSpec)
 ##    Parser.doParse()
     # with gramparserlexyacc:
-    Parser = natlinkutils.GramParser(gramSpec)
+    Parser = gramparser.GramParser(gramSpec)
     Parser.doParse()
     ParserInfo=(InverseDict(Parser.knownWords),InverseDict(Parser.knownRules),
         InverseDict(Parser.knownLists),Parser.importRules)

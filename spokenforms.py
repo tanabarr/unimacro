@@ -84,7 +84,8 @@ number1to99stripped = range(1, 20) +  range(20, 91, 10)
 status = natlinkstatus.NatlinkStatus()
 baseDirectory = status.getUserDirectoryFromIni()
 if not baseDirectory:
-    raise ImportError( 'no baseDirectory found while loading spokenforms.py, stop loading this module')
+    baseDirectory = ""
+    #raise ImportError( 'no baseDirectory found while loading spokenforms.py, stop loading this module')
 sampleBases = [thisBaseDirectory.lower()]
 if thisBaseDirectory.lower() != baseDirectory.lower():
     print 'actions module has ambiguous baseDirectory: |%s|, this: |%s|: take the latter one!'% (baseDirectory, thisBaseDirectory)
@@ -537,6 +538,8 @@ class SpokenForms(object):
         """return a dict with spoken forms (multiple) as keys, and the Values as values
         (in grammar excel)
         """
+        if not Values:
+            return {}
         D = {}
         for v in Values:
             L = self.generateMixedListOfSpokenForms(v)

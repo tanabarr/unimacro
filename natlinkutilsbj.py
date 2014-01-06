@@ -1,4 +1,4 @@
-__version__ = "$Revision: 512 $, $Date: 2013-09-04 14:45:28 +0200 (wo, 04 sep 2013) $, $Author: quintijn $"
+__version__ = "$Revision: 526 $, $Date: 2014-01-03 15:59:37 +0100 (vr, 03 jan 2014) $, $Author: quintijn $"
 # (unimacro - natlink macro wrapper/extensions)
 # (c) copyright 2003 Quintijn Hoogenboom (quintijn@users.sourceforge.net)
 #                    Ben Staniford (ben_staniford@users.sourceforge.net)
@@ -31,11 +31,11 @@ __version__ = "$Revision: 512 $, $Date: 2013-09-04 14:45:28 +0200 (wo, 04 sep 20
 """subclasses classes for natlink grammar files and utility functions
 
 """
-import sys, os, string, cPickle, os.path, types, glob, time, re, shutil
+import sys, os, string, cPickle, os.path, types, glob, time, re, shutil, copy
 import natlink
 import natlinkmain
 import natlinkcorefunctions
-from natlinkutils import *
+#from natlinkutils import *  ## natut refers to natlinkutils
 import gramparser # for translation with GramScannerReverse
 from actions import doAction as action
 from actions import doKeystroke as keystroke
@@ -59,8 +59,8 @@ reGrammarKeywords = re.compile(r"""
 reSplitComments = re.compile(r"(#.*$)", re.MULTILINE)   # # through end of line
 
 # boundaries for setList functions below:
-grammarListLengthWarning = 55
-grammarListLengthMaximum = 110
+grammarListLengthWarning = 55  # disabled 
+grammarListLengthMaximum = 300
 
 # difficult recognised counts:
 # used in grammar tasks and firefox_browsing:
@@ -271,7 +271,7 @@ def SwitchToNat():
 
 # Natural text switching
 def IsNaturalTextActive():
-    (User,Dir)=getCurrentUser()
+    (User,Dir)=natlink.getCurrentUser()
     try:
         OptFile=open(Dir+'\\'+'options.ini','r')
     except IOError:
@@ -313,7 +313,7 @@ def SetMousePosition(x,y):
 
 #adapted from natlinkutils    
 def ButtonClick(btnName='left',click='single'):
-    x, y = getCursorPos()
+    x, y = natlink.getCursorPos()
     singleLookup = { 
         'left':  [(wm_lbuttondown,x,y),(wm_lbuttonup,x,y)],
         'right': [(wm_rbuttondown,x,y),(wm_rbuttonup,x,y)],
@@ -341,9 +341,9 @@ def ButtonClick(btnName='left',click='single'):
 # app switching (is this used still?? getProg should be better, but is case insensitive QH2
 def GetAppName():
 #    if (GetOS()!='windows_nt'):
-    App=getBaseName(getCurrentModule()[0])
+    App=getBaseName(natlink.getCurrentModule()[0])
 #    else:
-#        App=getCurrentModule()[0]
+#        App=natlink.getCurrentModule()[0]
     return App
 
 
@@ -369,7 +369,7 @@ def GetAppName():
 # When combined with the <dngwords> rule, you can
 # provide a crude form of select( and say) in unsupported applications
 def StartSearchFor(StringToSearch,Down=1,Full=0):
-    moduleInfo = getCurrentModule()
+    moduleInfo = natlink.getCurrentModule()
     if matchWindow(moduleInfo, 'natspeak', '' ):
         natut.playString('{Ctrl+f}'+StringToSearch+'{Alt+f}{Esc}')
     elif matchWindow(moduleInfo, 'bibpad', '' ) or matchWindow(moduleInfo, 'textpad', '' ):
@@ -587,7 +587,7 @@ def ControlSetExclusiveGrammar():
 #    the module _control (including a MessageDictationGrammar)
 #    is available in the User directory of natpython
 
-GrammarXAncestor=GrammarBase # do not use self.__class__.bases[0]., see Python FAQ
+GrammarXAncestor=natut.GrammarBase # do not use self.__class__.bases[0]., see Python FAQ
 class GrammarX(GrammarXAncestor):
     __inherited=GrammarXAncestor
     status = 'new'
@@ -759,7 +759,7 @@ class GrammarX(GrammarXAncestor):
         if exclusive:
             if name in exclusiveGrammars:
                 return
-            moduleInfo = getCurrentModule()
+            moduleInfo = natlink.getCurrentModule()
             if self.activeRules:
                 if len(self.activeRules) > 1:
                     rule = self.name
@@ -835,8 +835,8 @@ class GrammarX(GrammarXAncestor):
         return 1
 
     def DisplayMessage(self,MessageText, pauseAfter=0, alert=None, alsoPrint=1):
-        if natqh.getDNSVersion >= 12:
-            return # silently ignore this in Dragon 12
+        #if natqh.getDNSVersion >= 12:
+        #    return # silently ignore this in Dragon 12
         if self.inGotBegin:
 ##            print 'message from gotBegin not allowed: %s'% MessageText
             SetPendingMessage(MessageText)
@@ -861,7 +861,7 @@ class GrammarX(GrammarXAncestor):
             AddedMessage = '\\' + MessageText
         else:
             AddedMessage = '\\\\' + MessageText
-        print 'DisplayMessage: %s'% AddedMessage
+        #print 'DisplayMessage: %s'% AddedMessage
         try:
             SetDisplayingMessage()
             if exclusiveGrammars:
@@ -946,6 +946,11 @@ class GrammarX(GrammarXAncestor):
         if pauseAfter:
             print 'pause after DisplayMessage: %s'% pauseAfter
             time.sleep(pauseAfter)
+
+    def message(self, mess):
+        """only print to Messages window
+        """
+        print mess
 
     # progress report
     def IProgressReport(self,Case,TotalCases,NPeriods):
@@ -1084,10 +1089,11 @@ class BrowsableGrammar(BrowsableGrammarAncestor):
                 print 'appendList/setList: can only set %s items (out of %s) to grammar list: "%s"'% (newAllowed, lentwo, listName)
                 wordsToAppend = words[:newAllowed]
         elif lenone + lentwo > grammarListLengthWarning:
-            if lenone:
-                print 'appendList, warning list becoming large: appending %s items to grammar list: "%s", new length: %s'% (lentwo, listName, lenone+lentwo)
-            else:
-                print 'appendList/setList, warning list becoming large: setting %s items to grammar list: "%s"'% (lentwo, listName)
+            pass  ## skip warning of large list:
+            #if lenone:
+            #    print 'appendList, warning list becoming large: appending %s items to grammar list: "%s", new length: %s'% (lentwo, listName, lenone+lentwo)
+            #else:
+            #    print 'appendList/setList, warning list becoming large: setting %s items to grammar list: "%s"'% (lentwo, listName)
             
             
 
@@ -1275,43 +1281,57 @@ class IniGrammar(IniGrammarAncestor):
     def __init__(self):
         self.__inherited.__init__(self)
         self.language = natqh.getLanguage()
-        self.oldGramSpec = None         # a copy of the original gramSpec
-        self.gramSpecTranslated = None  # a copy of the resulting translation if any (None otherwise)
         
-        if self.gramSpec:
-            # here the grammar is not loaded yet, but the ini file is present
-            self.startInifile()
-            self.name = self.checkName()
-            self.debug = None # can be set in some grammar at initialize time
-            #mod = sys.modules[self.__module__]
+        if not self.gramSpec:
+            print 'IniGrammar did not find gramSpec'
+            return
+        
+        try:
+            # done before, or coming from DocstringGrammar:
+            self.gramSpec = copy.copy(self.originalGramSpec)
+        except:
+            # first time here, define self.originalGramSpec:
+            if self.gramSpec:
+                if isinstance(self.gramSpec, basestring):
+                    self.originalGramSpec = self.gramSpec
+                elif type(self.gramSpec) == types.ListType:
+                    self.originalGramSpec = '\n'.join(self.gramSpec)
+                else:
+                    raise TypeError('IniGrammar "%s", gramSpec should be string or list, not: %s'% (self.name, type(self.gramSpec)))
+        self.gramSpecTranslated = None  # a copy of the resulting translation if any (None otherwise)
+
+        # here the grammar is not loaded yet, but the ini file is present
+        self.startInifile()
+        self.name = self.checkName()
+        self.debug = None # can be set in some grammar at initialize time
+        #mod = sys.modules[self.__module__]
 ##            version = getattr(mod, '__version__', '---')
 ##            self.version = version.split(',')[0].strip("$Revision: ")
-            self.version = None  #SVN change
-            self.DNSVersion = natqh.getDNSVersion()
-            self.spokenforms = spokenforms.SpokenForms(self.language, self.DNSVersion) # for spoken forms numbers!!
-        else:
-            print 'IniGrammar did not find gramSpec'
-            
-    def __str__(self):
-        return '<inigr: %s>'% self.GetName()
+        self.version = None  #SVN change
+        self.DNSVersion = natqh.getDNSVersion()
+        self.spokenforms = spokenforms.SpokenForms(self.language, self.DNSVersion) # for spoken forms numbers!!
 
-    def load(self,gramSpec,allResults=0,hypothesis=0, grammarName=None):
-        grammarName = grammarName or self.name
-        self.orgGramSpec = copy.copy(gramSpec)  # copy!
-        translated = self.translateGrammar(gramSpec)  # pass original gramSpec...
+        #grammarName = grammarName or self.name
+
+        translated = self.translateGrammar(self.originalGramSpec)  # pass original gramSpec...
         if translated:
-            self.gramSpecTranslated = translated.split('\n')
+            self.gramSpec = translated
             try:
                 translationText = {'enx': ' (with synonyms)',
                                    'nld': ' (vertaald)'}[self.language]
             except KeyError:
                 translationText = ' (translated)'
-            nameForParser = grammarName+ translationText
-
-            success = self.__inherited.load(self,self.gramSpecTranslated,allResults,hypothesis, grammarName=nameForParser)
-            return success
+            self.nameForParser = self.name + translationText
         else:
-            success = self.__inherited.load(self,gramSpec,allResults,hypothesis, grammarName=grammarName)
+            self.gramSpec = self.originalGramSpec
+            self.nameForParser = self.name
+            
+    def __str__(self):
+        return '<inigr: %s>'% self.GetName()
+
+    def load(self,gramSpec,allResults=0,hypothesis=0, grammarName=None):
+            grammarName = grammarName or self.nameForParser
+            success = self.__inherited.load(self,gramSpec,allResults,hypothesis,grammarName)
             return success
 
     def checkName(self):
@@ -1393,14 +1413,18 @@ class IniGrammar(IniGrammarAncestor):
         oldTranslateKeys = translateWords.keys()
         newTranslateWords = {}
         self.gramWords = {} # keys: new grammar words, values mappings to the old grammar words
-        
+
         if type(gramSpec) == types.ListType:
-            self.oldGramSpec = '\n'.join(self.gramSpec)
-            localGramSpec = copy.copy(gramSpec)  
+            self.oldGramSpec = '\n'.join(gramSpec)
+            while type(self.oldGramSpec) == types.ListType:
+                self.oldGramSpec = '\n'.join(self.oldGramSpec)
         else:
             # assume string:
             self.oldGramSpec = gramSpec
-            localGramSpec = [gramSpec]
+        if type(self.oldGramSpec) != types.StringType:
+            print 'cannot translate gramSpec, wrong type: %s'% gramSpec
+            return 
+        localGramSpec = [self.oldGramSpec]
         gramparser.splitApartLines(localGramSpec)  # in the list splitting, gst gramSpecTranslated!
 
         # go and get the peek_ahead iterator of the GramScannerReverse:
@@ -1530,8 +1554,13 @@ class IniGrammar(IniGrammarAncestor):
                 #print 'correctIniFile, non translated words same as before'
             else:
                 self.ini.set(notTransSection, 'words', newTranslateWords.keys())
-                self.ini.set(notTransSection, 'info1', 'These grammar words can be used for a translation or for synonyms')
-                self.ini.set(notTransSection, 'info2', 'See http://unimacro.antenna.nl/features for more info')
+                if self.language == 'enx':
+                    self.ini.set(notTransSection, 'info1', 'These grammar words can be changed if you want synonyms for them.')
+                elif self.language == 'nld':
+                    self.ini.set(notTransSection, 'info1', 'De volgende grammatica woorden kunnen worden vertaald.')
+                else:
+                    self.ini.set(notTransSection, 'info1', 'These grammar words can be translated.')
+                self.ini.set(notTransSection, 'info2', 'See http://unimacro.antenna.nl/features/translations for more info')
                 self.ini.write()
         else:
             if self.ini.get(notTransSection):
@@ -1729,7 +1758,7 @@ noot mies
                 print 'IniGrammar switched on: %s'% self.getName()
                 
         except:
-            self.DisplayMessage('error switching on grammar %s, deactivate all rules\n\n (%s, %s)'% 
+            self.message('error switching on grammar %s, deactivate all rules\n\n (%s, %s)'% 
                                (self.getName(), sys.exc_info()[0], sys.exc_info()[1]))
             self.deactivateAll()            
     
@@ -1944,7 +1973,18 @@ noot mies
 
         
         whatFile = os.path.join(os.environ['TEMP'], language + '__' + moduleName.replace(' ', '_') + extension)
-        print 'writing to and open:\n\t"%s"'% whatFile
+        if os.path.isfile(whatFile):
+            #print 'already exist, try to remove: %s'% whatFile
+            try:
+                os.remove(whatFile)
+            except IOError:
+                print 'Cannot remove previous help (show) file: "%s:"\nProbably this file is still open in Notepad\nPlease close and call your command again'% whatFile
+                return
+        if os.path.isfile(whatFile):
+            print 'Cannot remove previous help (show) file: "%s:"\nProbably this file is still open in Notepad\nPlease close and call your command again'% whatFile
+            return
+        
+        #print 'writing to and open:\n\t"%s"'% whatFile
         fSock = open(whatFile, 'w')
         
         fSock.write('\n'.join(L))
@@ -2026,10 +2066,18 @@ noot mies
                     self.ini.set(l)
             if changes:
                 self.ini.write()
-                self.DisplayMessage('fillGrammarLists in grammar "%s"\n\nNot all lists filled: %s\n\nPlease fill in in inifile'%
-                                    (self.name, fromGrammar))
+                commandText = {'nld': 'bewerk'}
+                try:
+                    commandWord = commandText[self.language]
+                except KeyError:
+                    commandWord = "edit"
+
+                self.message('fillGrammarLists in grammar "%s"\n\nNot all lists filled: %s\n\nPlease fill in in inifile by calling the command "%s %s"'%
+                                    (self.name, fromGrammar, commandWord, self.name))
                 self.checkForChanges = 1
-                self.openFileDefault(self.inifile)
+                self.iniFileDate = natqh.getFileDate(self.inifile)
+                
+                #self.openFileDefault(self.inifile)
 
     def setNumbersList(self, name, numbers):
         """try to get spoken forms for the numbers
@@ -2151,19 +2199,26 @@ noot mies
                                         self.language +"_inifiles")
         inifile = os.path.join(commandDir, modName + '.ini')
         if not os.path.isfile(inifile):
-            print 'cannot find inifile: %s, look for examples'% inifile
+            print 'Cannot find inifile: %s'% inifile
             self.lookForExampleInifile(commandDir, modName + '.ini')
             if not os.path.isfile(inifile):
                 print 'cannot find an example inifile for %s'% modName
                 self.inifile = inifile
                 self.TryToMakeDefaultInifile(commandDir,modName + '.ini', self.language)
                 if not  os.path.isfile(inifile):
-                    self.DisplayMessage('cannot make a default inifile for: %s (%s)'%
+                    self.message('cannot make a default inifile for: %s (%s)'%
                                         (modName, inifile))
                     self.inifile = None
                     return
-            self.openFileDefault(inifile)
-            self.DisplayMessage('created new inifile for grammar %s, please edit'% modName)
+            #self.openFileDefault(inifile)
+            commandText = {'nld': 'bewerk'}
+            try:
+                commandWord = commandText[self.language]
+            except KeyError:
+                commandWord = "edit"
+            
+            self.message('===Created new inifile for grammar "%s"\n===Please edit this file by calling the command "%s %s"'%
+                         (modName, commandWord, self.name))
         self.inifile = inifile
         #self.ini = inivars.IniVars(self.inifile, repairErrors=1)
 
@@ -2175,7 +2230,7 @@ noot mies
             self.openFileDefault(self.inifile)
             print '****IniError while initialising: %s' % self.name
             if notifyIniErrors:
-                self.DisplayMessage(mess)
+                self.message(mess)
             print '****error message: '+mess
 
             self.ini = None
@@ -2204,7 +2259,7 @@ noot mies
             mess = str(sys.exc_info()[1])
             self.openFileDefault(self.inifile)
             if notifyIniErrors:
-                self.DisplayMessage(mess)
+                self.message(mess)
             print '***IniError when filling instance variables: %s' % self.name
             print '***error message: '+mess
             self.ini = None
@@ -2245,10 +2300,7 @@ noot mies
         if not os.path.isfile(inifile):
             if inifileSamples:
                 sample = inifileSamples[0]
-                if len(inifileSamples) > 1:
-                    print 'take first inifile from samples: %s'% inifileSamples
-                else:
-                    print 'take inifilesample: %s'% sample
+                print 'take sample inifile: %s'% sample
                 shutil.copyfile(sample, inifile)
             else:
                 print 'could not find a valid sample inifile "%s" in directories: %s'%\
@@ -2287,27 +2339,39 @@ noot mies
 
         if newDate > self.iniFileDate:
             oldName = self.ini.get('grammar name', 'name')
-            print 'newDate of %s'% self.inifile
+            #print 'newDate of %s'% self.inifile
             self.iniFileDate = newDate
-            print '----------(re)loading inifile: %s'% self.inifile
+            print '---(re)loading inifile: %s'% self.inifile ##, self.iniFileDate)
             try:
                 self.ini = inivars.IniVars(self.inifile, repairErrors=1)
                 self.fillInstanceVariables()
                 self.switchOn()
                 self.openedInifile = 0
                 newName = self.ini.get('grammar name', 'name')
-                if self.translateGrammar(self.gramSpec) or oldName != newName:
-                    # grammar definition is changed, touch the file, reloaded next time
-##                    print 'unload and load inside routine! %s'% self.name
-##                    self.unload()
-##                    self.load(self.gramSpec)
-##                    self.initialize()
-                    
+                #
+                # NOTE: here we rely on the definition of the grammar specification as gramSpec class variable!
+                #
+                previousGramSpec = copy.copy(self.gramSpec)
+                if isinstance(self.gramSpec, basestring):
+                    previousGramSpec = self.gramSpec
+                elif type(self.gramSpec) == types.ListType:
+                    previousGramSpec = '\n'.join(self.gramSpec)
+                else:
+                    raise TypeError('At reload inifile of IniGrammar "%s", gramSpec should be a string or a list, not: %s'% (self.name, type(self.gramSpec)))
+                translated = self.translateGrammar(self.originalGramSpec)  # pass originalGramSpec...
+                if translated and translated != previousGramSpec:
+                    print 'translated: %s'% translated
+                    print 'previous: %s'% previousGramSpec
+                    self.gramSpec = translated
                     fullPath = natlinkmain.loadedFiles[self.__module__]
                     natqh.setCheckForGrammarChanges(1)
                     print 'going to reload grammar %s (full path: %s)'% (self.name, fullPath)
                     os.utime(fullPath, None)
                     self.DisplayMessage('grammar %s will be reloaded at next utterance'% self.name)
+                    self.iniFileDate = natqh.getFileDate(self.inifile)  # just in case it has been changed during translate
+                #elif translated:
+                #    print 'translation identical, no reload necessary for %s'% self.name
+
             except inivars.IniError:
                 mess = str(sys.exc_info()[1])
                 if not self.openedInifile:
@@ -2315,7 +2379,7 @@ noot mies
                 self.openedInifile = 1
 
                 if notifyIniErrors:
-                    self.DisplayMessage(mess)
+                    self.message(mess)
                 print '****error inifile: '+mess
                 return
             return 1  # signalling things changed
@@ -2526,7 +2590,7 @@ noot mies
             if not toRemove:
                 return
             else:
-                self.error('removedFromList, list is empty, 10but toRemove is not empty: %s'% toRemove)
+                self.error('removedFromList, list is empty, but toRemove is not empty: %s'% toRemove)
                 return
         if not toRemove:
             return
@@ -2548,10 +2612,11 @@ noot mies
             return
         
 
-    # Here are the grammar rules, that interpret a given number:
-    def gotResults___1to9(self,words,fullResults):
-        numWords = self.getNumbersFromSpoken(words, asStr=1)
-        self._sofar = self._sofar + ''.join(numWords)
+    ## Here are the grammar rules, that interpret a given number:
+    #def gotResults___1to9(self,words,fullResults):
+    #    numWords = self.getNumbersFromSpoken(words, asStr=1)
+    #    self._sofar = self._sofar + ''.join(numWords)
+        
 
     def gotResults___1to99(self,words,fullResults):
         numWords = self.getNumbersFromSpoken(words, asStr=1)
@@ -2562,23 +2627,20 @@ noot mies
             # make '40 3' -->> '43' etc:
             L = []
             lenWords = len(numWords)
-            for i, w in enumerate(numWords):
-                if i < lenWords-1 and len(w) == 2 and \
-                     w[-1] == '0' and w[0] != '1':
-                    #print 'appending only: %s'% w[0]
-                    L.append(w[0])
-                else:
-                    #print 'append w: %s'% w
-                    L.append(w)
+            for w in numWords:
+                if len(w) == 1:
+                    if L and int(L[-1]) and L[-1][-1] == '0':
+                        print 'scratch away one 0, before: %s'% L
+                        L[-1] = L[-1][:-1]  ## scratch away one 0, 40 3 must become 43, so list element '40' becomes '4'
+                        print 'scratch away one 0, after: %s'% L
+                L.append(w)
                             
             self._sofar = self._sofar + ''.join(L)
         #print 'sofar after rule: %s'% self._sofar
 
-    def gotResults___0to99(self,words,fullResults):
-        # same logic as:
-        self.gotResults___1to99(words,fullResults)
+    gotResults___0to99 = gotResults___1to99
 
-    def gotResults___100to999(self,words,fullResults):
+    def gotResults___hundreds(self,words,fullResults):
         assert not self._hundreds
         if self._sofar:
             self._hundreds = int(self._sofar)*100
@@ -2586,29 +2648,50 @@ noot mies
             self._hundreds = 100
         self._sofar = ''
 
-    def gotResults_number(self,words,fullResults):
-        for w in words:
-            if w in ['comma', 'komma']:
-                self._decimal = ','
-                self.collectNumber(part=1)
-            if w in ['punt', 'point', 'dot']:
-                self._decimal = '.'
-                self.collectNumber(part=1)
-
-    def gotResults_integer(self,words,fullResults):
-        w = words[0]
+    def gotResults___thousands(self,words,fullResults):
+        assert not self._thousands
         if self._sofar:
             sofar = int(self._sofar)
+            if self._hundreds:
+                sofar = self._hundreds + sofar
+            
+            self._thousands = sofar*1000
+        elif self._hundreds:
+            self._thousands = self._hundreds*1000
         else:
-            sofar = 1
-        if w in ['thousand', 'duizend']:
-            self._big += (self._hundreds + sofar) * 1000
-        elif w in ['million', 'miljoen']:
-            self._big += (self._hundreds + sofar) * 1000000
-        else:
-            raise NumberError, "Unexpected recognition results in rule number: %s"  
-        self._hundreds = 0
+            self._thousands = 1000
         self._sofar = ''
+        self._hundreds = 0
+        
+
+    def gotResults___millions(self,words,fullResults):
+        assert not self._millions
+        if self._sofar:
+            sofar = int(self._sofar)
+            if self._hundreds:
+                sofar = self._hundreds + sofar
+            elif self._thousands:
+                sofar = self._thousands + sofar
+                
+            self._millions = sofar*1000000
+        else:
+            self._millions = 1000000
+        self._sofar = ''
+        self._hundreds = self._thousands = 0
+
+    def gotResults_float(self,words,fullResults):
+        for w in words:
+            if self.hasCommon(words, ['comma', 'komma']):
+                self._decimal = ','
+            elif self.hasCommon(words, ['point', 'dot', 'punt']):
+                self._decimal = '.'
+            else:
+                raise UnimacroError('no valid word for float separator found: %s'% words)
+            self.collectNumber(part=1) # before the , or .
+
+
+    def gotResults_integer(self,words,fullResults):
+        pass  # only having subrules... Edit, number
 
     def waitForNumber(self, name):
         """set up variable name "name", to be filled with a number
@@ -2616,38 +2699,49 @@ noot mies
         also initialise the necesarry instance variables
         """        
         self._waitForNum = name
-        self._integerPart = self._big = self._hundreds = 0
+        self._integerPart = self._millions = self._thousands = self._hundreds = 0
         self._sofar = ''
         self._decimal = ''
+        # just in case it is called in the grammar logic:
+        setattr(self, name, None)
+        
         
     def collectNumber(self, part=0, asNumber=0):
         # if you're waiting for a number get it, and reset the parts
         if '_waitForNum' in dir(self) and self._waitForNum:
-            N = self._big + self._hundreds
+            N = self._millions
+            N += self._thousands
+            N += self._hundreds
             if N:
                 if self._sofar:
                     N += int(self._sofar)
-                total = str(N)
+                # losing leading zeros
+                Nstr = str(N)
+            elif self._sofar:
+                N = int(self._sofar)
+                Nstr = self._sofar
             else:
-                total = self._sofar
-            
-            if part:                
-                self._integerPart = total
+                return # nothing to be done (yet)
+
+            if part:
+                # collect the first part of the number:
+                self._integerPart = N
             else:
                 if '_integerPart' in dir(self) and self._integerPart:
                     # floatingpoint numbers always return in string:
-                    setattr(self, self._waitForNum, '%s%s%s'% (self._integerPart, self._decimal, total))
+                    setattr(self, self._waitForNum, '%s%s%s'% (self._integerPart, self._decimal, Nstr))
                 else:
+                    # do the integer number:
                     if asNumber:
-                        setattr(self, self._waitForNum, int(total))
+                        setattr(self, self._waitForNum, N)
                     else:
-                        setattr(self, self._waitForNum, total)
+                        setattr(self, self._waitForNum, Nstr)
                         
                 self._integerPart = 0
                 self._waitForNum = ''
                 
-
-            self._big = self._hundreds = 0
+            # reset the whole bunch:
+            self._millions = self._thousands = self._hundreds = 0
             self._sofar = ''
             
         #### end of number things        
@@ -2695,7 +2789,7 @@ noot mies
         # pass progInfo to the actions, to keep them from changing inside the stuff:
         if progInfo == None:
             progInfo = natqh.getProgInfo(modInfo)
-        prog, title, toporchild = progInfo
+        prog, title, toporchild, windowHandle = progInfo
         if prog == 'excel':
             connectExcel(progInfo)
         elif prog == 'winword':
@@ -2796,7 +2890,7 @@ noot mies
         if not progInfo:
             return # no information
         # old info:
-        prog, title, toporchild = progInfo
+        prog, title, toporchild, windowHandle = progInfo
         nprogInfo = natqh.getProgInfo() # for checking if window or title changed
         if (prog == 'natspeak' and title.find('dragonpad') >= 0) or \
            (prog == 'notepad' and title.find('notepad') >= 0) or \
@@ -2814,7 +2908,7 @@ noot mies
         global comingFrom
         if progInfo == None:
             progInfo = natqh.getProgInfo()
-        prog, title, toporchild = progInfo
+        prog, title, toporchild, windowHandle = progInfo
         if prog == 'excel':
             connectExcel(progInfo)
             ac = app.ActiveCell
@@ -2829,7 +2923,7 @@ noot mies
         """go back to previous place, excel or word"""
         if progInfo == None:
             progInfo = natqh.getProgInfo()
-        prog, title, toporchild = progInfo
+        prog, title, toporchild, windowHandle = progInfo
         if prog == 'excel':
             connectExcel(progInfo)
         elif prog == 'winword':
@@ -2858,14 +2952,17 @@ class DocstringGrammar(DocstringGrammarAncestor):
     giveFullResults = 0
     def __init__(self):
         self.ruleFuncsDict = {} # records the functions corresponding to rules
-        gramSpecFromDocstring = self.buildGramSpecFromDocstrings()
-        if getattr(self, 'gramSpec', None):
-            if gramSpecFromDocstring:
-                if not self.gramSpec.startswith('\n'):
-                    self.gramSpec = '\n' + self.gramSpec 
-                self.gramSpec = gramSpecFromDocstring + self.gramSpec
-        else:
-            self.gramSpec = gramSpecFromDocstring
+        gramSpecFromDocstring = self.buildGramSpecFromDocstrings() or ""
+        try:
+            classGramSpec = self.__class__.gramSpec
+            if not isinstance(classGramSpec, basestring):
+                classGramSpec = '\n'.join(classGramSpec)
+        except AttributeError:
+            classGramSpec = ""
+
+        totalgramSpec = gramSpecFromDocstring + '\n' + classGramSpec
+        self.gramSpec = totalgramSpec.strip()
+        self.originalGramSpec = self.gramSpec
         self.__inherited.__init__(self)
 
     def buildGramSpecFromDocstrings(self):
@@ -3109,22 +3206,26 @@ numberGrammar = {}
 numberGrammar['nld'] = """
 <__1to99> = {n1-99};
 <__0to99> = {n0-99};
-<__100to999> =  [<__1to99>] honderd [ [en] <__1to99> ];
-<integer> =  <__0to99>+
-           | <__100to999>
-           | [<__1to99> | <__100to999>] duizend [[en](<__1to99>|<__100to999>)]
-           | [<__1to99> | <__100to999>] miljoen [[en][<__1to99> | <__100to999>] duizend ][[en](<__1to99>|<__100to999>)];
+<__hundreds> = honderd | <__1to99> honderd | honderd <__1to99> | <__1to99> honderd <__1to99> ;
+<__thousands> = duizend | (<__1to99>|<__hundreds>) duizend | duizend (<__1to99>|<__hundreds>) |
+                   (<__1to99>|<__hundreds>) duizend  (<__1to99>|<__hundreds>);
+<__millions> = miljoen | miljoen (<__thousands>|<__hundreds>|<__1to99>) | (<__hundreds>|<__1to99>) miljoen |
+                (<__hundreds>|<__1to99>) miljoen (<__thousands>|<__hundreds>|<__1to99>) ;
+<integer> =  <__0to99>+ | <__hundreds> | <__thousands> | <__millions>;
+<float> = <integer> (punt|komma)  <__0to99>+;
 """
 
 numberGrammar['enx'] = """
-<__0to99> = {n0-19} | {n20-90}[{n1-9}];
-<__1to99> = {n1-19} | {n20-90}[{n1-9}];
-<__1to9> = {n1-9};
-<__100to999> =  [<__1to9>] hundred [ [and] <__1to99> ];
-<integer> = <__0to99>+ 
-            | <__100to999> 
-            | [<__1to99> | <__100to999>] thousand [[and](<__1to99>|<__100to999>)]
-            | [<__1to99> | <__100to999>] million [[and][<__1to99> | <__100to999>] thousand ][[and](<__1to99>|<__100to999>)];
+<__0to99> = {n0-19} | {n20-90} | {n20-90}{n1-9};
+<__1to99> = {n1-19} | {n20-90} | {n20-90}{n1-9};
+
+<__hundreds> = hundred | <__1to99> hundred | hundred <__1to99> | <__1to99> hundred <__1to99> ;
+<__thousands> = thousand | (<__1to99>|<__hundreds>) thousand | thousand (<__1to99>|<__hundreds>) |
+                   (<__1to99>|<__hundreds>) thousand  (<__1to99>|<__hundreds>);
+<__millions> = million | million (<__thousands>|<__hundreds>|<__1to99>) | (<__hundreds>|<__1to99>) million |
+                (<__hundreds>|<__1to99>) million (<__thousands>|<__hundreds>|<__1to99>) ;
+<integer> = <__0to99>+ | <__hundreds> | <__thousands> | <__millions>;
+<float> = <integer> (point|dot) <__0to99>+;
 """
 numberGrammar['deu'] = numberGrammar['nld']
 
@@ -3132,15 +3233,17 @@ numberGrammarTill999 = {}
 numberGrammarTill999['nld'] = """
 <__1to99> = {number1to99};
 <__0to99> = {number0to99};
-<__100to999> =  [<__1to99>] honderd [ [en] <__1to99> ];
-<integer> =  <__0to99>+ | <__100to999>;
+<__hundreds> = honderd | <__1to99> honderd | honderd <__1to99> | <__1to99> honderd <__1to99> ;
+<integer> =  <__0to99>+ | <__hundreds>;
+<float> = <integer> (punt|komma|dot)  <__0to99>+;
 """
 numberGrammarTill999['enx'] = """
-<__0to99> = {n0-19} | {n20-90}[{n1-9}];
-<__1to99> = {n1-19} | {n20-90}[{n1-9}];
-<__1to9> = {n1-9};
-<__100to999> =  [<__1to9>] hundred [ [and] <__1to99> ];
-<integer> = <__0to99>+ | <__100to999>;
+<__0to99> = {n0-19} | {n20-90} | {n20-90}{n1-9};
+<__1to99> = {n1-19} | {n20-90} | {n20-90}{n1-9};
+<__hundreds> = hundred | <__1to99> hundred | hundred <__1to99> | <__1to99> hundred <__1to99> ;
+<integer> = <__0to99>+ | <__hundreds>;
+<float> = <integer> (point|dot) <__0to99>+;
+
 """
 numberGrammarTill999['deu'] = numberGrammarTill999['nld']
 
@@ -3148,20 +3251,21 @@ numberGrammarTill999999 = {}
 numberGrammarTill999999['nld'] = """
 <__1to99> = {n1-99};
 <__0to99> = {n0-99};
-<__100to999> =  [<__1to99>] honderd [ [en] <__1to99> ];
-<integer> =  <__0to99>+
-           | <__100to999>
-           | [<__1to99> | <__100to999>] duizend [[en](<__1to99>|<__100to999>)];
+<__hundreds> = honderd | <__1to99> honderd | honderd <__1to99> | <__1to99> honderd <__1to99> ;
+<__thousands> = duizend | (<__1to99>|<__hundreds>) duizend | duizend (<__1to99>|<__hundreds>) |
+                   (<__1to99>|<__hundreds>) duizend  (<__1to99>|<__hundreds>);
+<integer> =  <__0to99>+ | <__hundreds> | <__thousands>;
+<float> = <integer> (punt|komma) <__0to99>+;
 """
 
 numberGrammarTill999999['enx'] = """
-<__0to99> = {n0-19} | {n20-90}[{n1-9}];
-<__1to99> = {n1-19} | {n20-90}[{n1-9}];
-<__1to9> = {n1-9};
-<__100to999> =  [<__1to9>] hundred [ [and] <__1to99> ];
-<integer> = <__0to99>+ 
-            | <__100to999> 
-            | [<__1to99> | <__100to999>] thousand [[and](<__1to99>|<__100to999>)];
+<__0to99> = {n0-19} | {n20-90} | {n20-90}{n1-9};
+<__1to99> = {n1-19} | {n20-90} | {n20-90}{n1-9};
+<__hundreds> = hundred | <__1to99> hundred | hundred <__1to99> | <__1to99> hundred <__1to99> ;
+<__thousands> = thousand | (<__1to99>|<__hundreds>) thousand | thousand (<__1to99>|<__hundreds>) |
+                   (<__1to99>|<__hundreds>) thousand  (<__1to99>|<__hundreds>);
+<integer> = <__0to99>+ | <__hundreds> | <__thousands>;
+<float> = <integer> (point|dot)  <__0to99>+;
 """
 numberGrammarTill999999['deu'] = numberGrammarTill999999['nld']
 
@@ -3169,7 +3273,7 @@ numberGrammarTill999999['deu'] = numberGrammarTill999999['nld']
 def connectExcel(progInfo):
     """connect to excel and leave parameters in global vars"""
     global app, appProgram, sheet
-    prog, title, toporchild = progInfo
+    prog, title, toporchild, windowHandle = progInfo
     
     if prog == 'excel':
         if appProgram != 'excel' or not app:
@@ -3189,7 +3293,7 @@ def connectExcel(progInfo):
 def connectWinword(progInfo):
     """connect to word and leave parameters in global vars"""
     global app, appProgram, doc   
-    prog, title, toporchild = progInfo
+    prog, title, toporchild, windowHandle = progInfo
     
     if prog == 'winword':
         if appProgram != 'winword' or not app:
