@@ -110,7 +110,6 @@ linux software notes = u:\software\linux_software_notes
 literature = u:\literature
 macrosystem = nl:\Natlink\Macrosystem
 music = hw:\Music
-personal = u:\personal
 prime = x:\PRIME PTS Server
 projects = u:\projects
 software = u:\software
@@ -177,6 +176,7 @@ kilo = k
 
 [obsolete folders]
 downloads = p:\
+personal = u:\personal
 
 
 [obsolete virtualdrives]
@@ -225,6 +225,7 @@ sky go = http://go.sky.com/vod/
 speech computing forum = http://www.speechcomputing.com/tracker
 spotify = https://play.spotify.com/discover
 unimacro = http://qh.antenna.nl/unimacro
+vim repositories = https://github.com/vim-scripts?tab=repositories
 voice coder = http://tech.groups.yahoo.com/group/VoiceCoder/
 webmail work = https://webmail.roke.co.uk
 work cloud storage = https://cloud1.roke.co.uk
