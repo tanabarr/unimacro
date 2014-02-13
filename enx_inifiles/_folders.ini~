@@ -46,10 +46,8 @@ digital pass = C:\Program Files\Vasco\DIGIPASS for Windows 5.0\DP4Windows.exe
 putty = po:/PuTTY/putty.exe
 search everything = po:/Everything/Everything.exe
 vim macros = nl/Vocola/vim.vch
-
-voice restart = C:\Program Files (x86)\Nuance\NaturallySpeaking12\Program\nsrst.bat
-
 winscp = C:\Program Files (x86)\WinSCP3\WinSCP3.exe
+
 
 [files ws]
 BTX remote.bat = BTX remote
@@ -59,6 +57,7 @@ Mobile screen.vnc = Mobile screen
 Work Lte.bat = Work Lte
 Work Unix.bat = Work Unix
 android_backup.bat = android_backup
+configspeech.py = configspeech
 cvim.bat = cvim
 device_watch.bat = device_watch
 device_watch.py = device_watch
@@ -72,6 +71,7 @@ mobile broadband start.bat = mobile broadband start
 mobile broadband stop.bat = mobile broadband stop
 mobile restart.bat = mobile restart
 network restart.bat = network restart
+nsrst.bat = nsrst
 off-line_perm_update.bat = off-line_perm_update
 phone_forwarding.bat = phone_forwarding
 phone_permissions.bat = phone_permissions
@@ -98,24 +98,15 @@ restore = <<windowrestore>>
 NatLink = nl:\NatLink
 Unimacro = nl:\Unimacro
 Vocola = nl:\Vocola
-current project = u:\projects\enatt
 cygwin = db:\cygwin
 cygwin home = db:\cygwin\home\tan
 desktop = hw/Desktop
 documents = ~
 dropbox = db
 home win = hw
-home work = u:\
-linux software notes = u:\software\linux_software_notes
-literature = u:\literature
 macrosystem = nl:\Natlink\Macrosystem
 music = hw:\Music
 prime = x:\PRIME PTS Server
-projects = u:\projects
-software = u:\software
-software notes = u:\software\generic_software_notes
-speech related = u:\software\Speech related
-voice = u:\software\Speech related
 win scripts = ws
 
 
@@ -130,7 +121,6 @@ projects = projects
 reference scripts = reference scripts
 software = software
 th = th;
-vimfiles = vimfiles
 
 
 [general]
@@ -173,14 +163,25 @@ kilo = k
 
 [obsolete files]
 
+voice restart = C:\Program Files (x86)\Nuance\NaturallySpeaking12\Program\nsrst.bat
+
 
 [obsolete folders]
+current project = u:\projects\enatt
 downloads = p:\
+home work = u:\
+linux software notes = u:\software\linux_software_notes
+literature = u:\literature
 personal = u:\personal
+projects = u:\projects
+software = u:\software
+software notes = u:\software\generic_software_notes
+speech related = u:\software\Speech related
+voice = u:\software\Speech related
 
 
 [obsolete virtualdrives]
-th = U:/
+th = u:/
 
 
 [subversionfilecommands]
