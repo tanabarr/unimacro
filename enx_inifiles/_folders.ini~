@@ -44,6 +44,7 @@ cygwin terminal = db:\cygwin\shortcut.lnk
 digital pass = C:\Program Files\Vasco\DIGIPASS for Windows 5.0\DP4Windows.exe
 
 putty = po:/PuTTY/putty.exe
+python help = C:\Python27\Doc\python274.chm
 search everything = po:/Everything/Everything.exe
 vim macros = nl/Vocola/vim.vch
 winscp = C:\Program Files (x86)\WinSCP3\WinSCP3.exe
@@ -98,15 +99,25 @@ restore = <<windowrestore>>
 NatLink = nl:\NatLink
 Unimacro = nl:\Unimacro
 Vocola = nl:\Vocola
+current project = u:\projects\enatt
 cygwin = db:\cygwin
 cygwin home = db:\cygwin\home\tan
 desktop = hw/Desktop
 documents = ~
 dropbox = db
 home win = hw
+home work = u:\
+linux software notes = u:\software\linux_software_notes
+literature = u:\literature
 macrosystem = nl:\Natlink\Macrosystem
 music = hw:\Music
+personal = u:\personal
 prime = x:\PRIME PTS Server
+projects = u:\projects
+software = u:\software
+software notes = u:\software\generic_software_notes
+speech related = u:\software\Speech related
+voice = u:\software\Speech related
 win scripts = ws
 
 
@@ -162,26 +173,14 @@ kilo = k
 
 
 [obsolete files]
-
-voice restart = C:\Program Files (x86)\Nuance\NaturallySpeaking12\Program\nsrst.bat
+voice restart = C:\Users\tan.000\Desktop\nsrst.bat
 
 
 [obsolete folders]
-current project = u:\projects\enatt
 downloads = p:\
-home work = u:\
-linux software notes = u:\software\linux_software_notes
-literature = u:\literature
-personal = u:\personal
-projects = u:\projects
-software = u:\software
-software notes = u:\software\generic_software_notes
-speech related = u:\software\Speech related
-voice = u:\software\Speech related
 
 
 [obsolete virtualdrives]
-th = u:/
 
 
 [subversionfilecommands]
@@ -198,6 +197,7 @@ nl = C:/Natlink
 pf = C:/Program Files
 po = C:/Program Files (x86)
 rd = c:/
+th = u:/
 ws = c:/win scripts
 
 
