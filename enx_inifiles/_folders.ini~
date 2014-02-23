@@ -39,7 +39,8 @@ word = wordpad
 Editor macros = C:\Natlink\Vocola\vim.vch
 Windows mail = C:\Program Files (x86)\Windows Live\Mail\wlmail.exe
 bash macros = nl/Vocola/UNIX_shell.vch
-cygwin terminal = db:\cygwin\shortcut.lnk
+cygwin set up = software/setup-x86.exe
+cygwin terminal = db:\cygwin\Cygwin.bat
 
 digital pass = C:\Program Files\Vasco\DIGIPASS for Windows 5.0\DP4Windows.exe
 
