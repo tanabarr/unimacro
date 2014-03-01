@@ -48,6 +48,7 @@ putty = po:/PuTTY/putty.exe
 python help = C:\Python27\Doc\python274.chm
 search everything = po:/Everything/Everything.exe
 vim macros = nl/Vocola/vim.vch
+voice restart = ws:/nsrst.bat
 winscp = C:\Program Files (x86)\WinSCP3\WinSCP3.exe
 
 
@@ -113,6 +114,7 @@ linux software notes = u:\software\linux_software_notes
 literature = u:\literature
 macrosystem = nl:\Natlink\Macrosystem
 music = hw:\Music
+payments = u:\personal\ATW\employer
 personal = u:\personal
 prime = x:\PRIME PTS Server
 projects = u:\projects
@@ -175,7 +177,6 @@ kilo = k
 
 
 [obsolete files]
-voice restart = ws/nsrst.bat
 
 
 [obsolete folders]
