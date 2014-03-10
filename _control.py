@@ -648,7 +648,7 @@ print 'messageDictGrammar initialized'
 
 
 # standard stuff Joel (adapted for possible empty gramSpec, QH, unimacro)
-utilGrammar = natut.UtilGrammar()
+utilGrammar = UtilGrammar()
 if utilGrammar.gramSpec:
     utilGrammar.initialize()
 
