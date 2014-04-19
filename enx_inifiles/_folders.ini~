@@ -47,6 +47,7 @@ digital pass = C:\Program Files\Vasco\DIGIPASS for Windows 5.0\DP4Windows.exe
 putty = po:/PuTTY/putty.exe
 python help = C:\Python27\Doc\python274.chm
 search everything = po:/Everything/Everything.exe
+to do = desktop/to do today.txt
 vim macros = nl/Vocola/vim.vch
 voice restart = ws:/nsrst.bat
 winscp = C:\Program Files (x86)\WinSCP3\WinSCP3.exe
@@ -64,6 +65,7 @@ configspeech.py = configspeech
 cvim.bat = cvim
 device_watch.bat = device_watch
 device_watch.py = device_watch
+device_watch_devlist.txt = device_watch_devlist
 explorer restart.bat = explorer restart
 git_auto.bat = git_auto
 git_auto_bak.txt = git_auto_bak
@@ -106,7 +108,6 @@ cygwin = db:\cygwin
 cygwin home = db:\cygwin\home\tan
 cygwin python project = db:\cygwin\home\tan\src\py\projects
 desktop = hw/Desktop
-documents = ~
 dropbox = db
 home win = hw
 home work = u:\
@@ -130,11 +131,15 @@ CV = CV
 Dormant = Dormant
 IT = IT
 TC = TC
+conferences = conferences
+
 literature = literature
 personal = personal
 projects = projects
 reference scripts = reference scripts
 software = software
+templates = templates
+
 th = th;
 
 
@@ -180,10 +185,12 @@ kilo = k
 
 
 [obsolete folders]
+documents = '"C:\win scripts\"\'
 downloads = p:\
 
 
 [obsolete virtualdrives]
+md = %HOME%
 
 
 [subversionfilecommands]
@@ -195,7 +202,6 @@ downloads = p:\
 [virtualdrives]
 db = C:/Users/tan.000/Dropbox
 hw = C:\Users\tan.000
-md = %HOME%
 nl = C:/Natlink
 pf = C:/Program Files
 po = C:/Program Files (x86)
