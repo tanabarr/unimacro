@@ -39,6 +39,9 @@ word = wordpad
 Editor macros = C:\Natlink\Vocola\vim.vch
 Windows mail = C:\Program Files (x86)\Windows Live\Mail\wlmail.exe
 bash macros = nl/Vocola/UNIX_shell.vch
+
+current document = C:\Users\tan.000\Documents\repositories\WP254 - Vanguard Management and Tasking System Requirements.doc
+
 cygwin set up = software/setup-x86.exe
 cygwin terminal = db:\cygwin\Cygwin.bat
 
@@ -131,15 +134,11 @@ CV = CV
 Dormant = Dormant
 IT = IT
 TC = TC
-conferences = conferences
-
 literature = literature
 personal = personal
 projects = projects
 reference scripts = reference scripts
 software = software
-templates = templates
-
 th = th;
 
 
