@@ -106,7 +106,7 @@ restore = <<windowrestore>>
 NatLink = nl:\NatLink
 Unimacro = nl:\Unimacro
 Vocola = nl:\Vocola
-current project = u:\projects\enatt
+current project = u:\projects\LI related\VIMS
 cygwin = db:\cygwin
 cygwin home = db:\cygwin\home\tan
 cygwin python project = db:\cygwin\home\tan\src\py\projects
@@ -134,11 +134,15 @@ CV = CV
 Dormant = Dormant
 IT = IT
 TC = TC
+conferences = conferences
+
 literature = literature
 personal = personal
 projects = projects
 reference scripts = reference scripts
 software = software
+templates = templates
+
 th = th;
 
 
