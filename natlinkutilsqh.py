@@ -1,4 +1,4 @@
-"$Revision: 526 $, $Date: 2014-01-03 15:59:37 +0100 (vr, 03 jan 2014) $, $Author: quintijn $"
+"$Revision: 538 $, $Date: 2014-07-22 20:42:39 +0200 (di, 22 jul 2014) $, $Author: quintijn $"
 # (unimacro - natlink macro wrapper/extensions)
 # (c) copyright 2003 Quintijn Hoogenboom (quintijn@users.sourceforge.net)
 #                    Ben Staniford (ben_staniford@users.sourceforge.net)
@@ -1623,7 +1623,13 @@ def clearClipboard():
     No input parameters, no result,
 
     """
-    win32clipboard.OpenClipboard()
+    for i in range(3):
+        try:
+            win32clipboard.OpenClipboard()
+        except:
+            shortWait()
+        else:
+            break
     try:
         win32clipboard.EmptyClipboard()
     finally:
@@ -1648,7 +1654,13 @@ def getClipboard():
     """get clipboard through natlink, and strips off backslash r
 
     """
-    t = natlink.getClipboard()
+    for i in range(3):
+        try:
+            t = natlink.getClipboard()
+        except:
+            shortWait()
+        else:
+            break
     if t:
         t = t.replace('\r', '')
         return t    

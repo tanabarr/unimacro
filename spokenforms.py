@@ -686,6 +686,8 @@ class SpokenForms(object):
         number1to3 gives: [1, 2, 3]
         0-20 gives: [0, 1, ..., 20]
         
+        but number10to99 gives [10, 11, ..., 99]
+        
     Note:
         0-360 or number1to360 gives [0, 10, ..., 360]
         """
@@ -718,7 +720,7 @@ class SpokenForms(object):
             print 'getNumbersList, (2) seems not to be a valid definition of a numbers list: %s'% listName
             return []
             
-        if n1%10 == 0 and n2%10==0 and n2 > 100 or n1 >= 10:
+        if n1%10 == 0 and n2%10==0 and (n2 > 100 or n1 >= 10):
             L = range(n1, n2+1, 10)
         else:
             L = range(n1, n2+1)

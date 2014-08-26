@@ -1,4 +1,4 @@
-__version__ = "$Revision: 523 $, $Date: 2013-12-25 13:17:06 +0100 (wo, 25 dec 2013) $, $Author: quintijn $"
+__version__ = "$Revision: 535 $, $Date: 2014-01-27 13:37:09 +0100 (ma, 27 jan 2014) $, $Author: quintijn $"
 # (unimacro - natlink macro wrapper/extensions)
 # (c) copyright 2003 Quintijn Hoogenboom (quintijn@users.sourceforge.net)
 #                    Ben Staniford (ben_staniford@users.sourceforge.net)
@@ -395,7 +395,8 @@ def doKeystroke(action, hardKeys=None, pauseBK=None,
     if not action:
         return
     ### bugfix as proposed by Frank Olaf:
-    #action = "{shift}" + action
+    #if not action.startswith("{shift}"):
+    #    action = "{shift}" + action
 
     if not ini:
         checkForChanges = 1
@@ -508,11 +509,12 @@ def getMetaAction(a, sectionList, progInfo):
     # try via actions_prog module:
     ext_instance = get_instance_from_progInfo(progInfo)
     if ext_instance:
+        prog = progInfo[0]
         funcName = 'metaaction_%s'% actionName
         func = getattr(ext_instance,funcName, None)
         if func:
             if debug > 1:
-                D('action by function from prog %s: |%s|(%s), arg: %s'% (prog, actionName, funcName, ext_instance,number))
+                D('action by function from prog %s: |%s|(%s), arg: %s'% (prog, actionName, funcName, number))
             result = func, number
             if result: return result
             # otherwise go on with "normal" meta actions...
@@ -1069,12 +1071,7 @@ def do_SCLIP(s):
     natqh.saveClipboard()
     natqh.setClipboard(s)
     print 'send through clipboard: %s'% s
-    GetAhkExe()
-    if ahkexe:
-        print 'do ^v with autohotkey'
-        do_AHK("send ^v")
-    else:
-        doKeystroke("{ctrl+v}")
+    doAction("<<paste>>")
     natqh.Wait()
     natqh.restoreClipboard()
     

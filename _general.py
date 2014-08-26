@@ -1,4 +1,4 @@
-__version__ = "$Rev: 515 $ on $Date: 2013-10-24 09:34:14 +0200 (do, 24 okt 2013) $ by $Author: quintijn $"
+__version__ = "$Rev: 538 $ on $Date: 2014-07-22 20:42:39 +0200 (di, 22 jul 2014) $ by $Author: quintijn $"
 # This file is part of a SourceForge project called "unimacro" see
 # http://unimacro.SourceForge.net and http://qh.antenna.nl/unimacro
 # (c) copyright 2003 see http://qh.antenna.nl/unimacro/aboutunimacro.html
@@ -46,7 +46,6 @@ from actions import doKeystroke as keystroke
 import actions
 # taskswitching moved to _tasks.py (july 2006)
 
-
 language = natqh.getLanguage()
 FORMATS = {
     # for letters (do nothing):
@@ -64,7 +63,6 @@ FORMATS = {
             natqh.wf_AddAnExtraSpaceFollowingThisWord
           ), 
     }
-
 version = natqh.getDNSVersion()
 user = natlink.getCurrentUser()[0]
 wordsFolder = os.path.split(
@@ -99,7 +97,7 @@ modes = ['spell', 'command', 'numbers', 'normal', 'dictation', 'dictate']
 normalSet = ['test', 'reload', 'info', 'undo', 'redo', 'namephrase', 'batch',
              'comment', 'mousefix', 'documentation', 'modes', 'variable', 'search',
              'highlight',         # for Shane, enable, because Vocola did not fix _anything yet
-             'browsewith', 'hyphenatephrase']
+             'browsewith', 'hyphenatephrase', 'openuser']
 #normalSet = ['hyphenatephrase']
 
 
@@ -111,15 +109,17 @@ class ThisGrammar(ancestor):
 
     iniIgnoreGrammarLists = ['modes','count', 'namelist']
 
+    number_rules = natbj.numberGrammar[language] #  including millions
+
     language = natqh.getLanguage()        
     name = "general"
-    gramSpec = """
+    gramSpec = ["""
 <before> = Command | Here;
 <dgnletters> imported;
 <dgndictation> imported;
 <documentation> exported = Make documentation;
 <batch> exported = do batch words;
-<test> exported = test icons; 
+<test> exported = test (pleestring| even testen | abeecee); 
 <reload> exported = reload Natlink;
 <info> exported = give (user | window |unimacro| path) (info|information) ;
 <undo> exported = Undo [That] [{count} [times]];
@@ -136,7 +136,11 @@ class ThisGrammar(ancestor):
                             ({searchwords}[<dgndictation>])|
                             ((forward|back|up|down) [{count} [times]]));
 <browsewith> exported = ('browse with') {browsers};
-        """
+<openuser> exported = 'open user' {users};
+
+"""]
+
+      
 
     def initialize(self):
         if self.language:
@@ -188,6 +192,9 @@ class ThisGrammar(ancestor):
             natqh.Wait()
                 
 
+        
+        
+        
     def gotResults_batch(self,words,fullResults):
         
         files = [f[:-4] for f in os.listdir(wordsFolder)]
@@ -501,15 +508,17 @@ TT { font-family: lucidatypewriter, lucida console, courier }
 
 #  sstarting message
     def gotResults_test(self,words,fullResults):
-        ## delete to end:
-        iconDir = r'D:\natlink\unimacro\icons'
-        for name in ['repeat', 'repeat2', 'waiting', 'waiting2']:
-            iconPath = os.path.join(iconDir, name+'.ico')
-            print 'iconPath', iconPath
-            natlink.setTrayIcon(iconPath)
-            time.sleep(0.5)
 
-        natlink.setTrayIcon()
+        print "got words: %s"% words
+        ## delete to end:
+        #iconDir = r'D:\natlink\unimacro\icons'
+        #for name in ['repeat', 'repeat2', 'waiting', 'waiting2']:
+        #    iconPath = os.path.join(iconDir, name+'.ico')
+        #    print 'iconPath', iconPath
+        #    natlink.setTrayIcon(iconPath)
+        #    time.sleep(0.5)
+        #
+        #natlink.setTrayIcon()
 
         #allUsers = natlink.getAllUsers()
         #print 'allUsers: %s'% allUsers
@@ -856,6 +865,17 @@ TT { font-family: lucidatypewriter, lucida console, courier }
         keystroke(''.join(L))
         action("CLIPRESTORE")
         # 
+    def gotResults_openuser(self,words,fullResults):
+        user = self.getFromInifile(words[-1], 'users')
+        print 'user: %s'% user
+        try:
+            natlink.openUser(user)
+        except natlink.UnknownName:
+            print 'cannot open user "%s", unknown name'% user
+            
+            
+
+
     def gotResults(self,words,fullResults):
         if self.highlight:
             # for Shane
@@ -930,7 +950,6 @@ TT { font-family: lucidatypewriter, lucida console, courier }
             natqh.visibleWait()
             print 'calling stop search'
             self.stopSearch(progInfo=progInfo)
-
 
     def searchOn(self, count, progInfo=None):
         """search up or down possibly more times"""

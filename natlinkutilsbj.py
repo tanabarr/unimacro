@@ -1,4 +1,4 @@
-__version__ = "$Revision: 526 $, $Date: 2014-01-03 15:59:37 +0100 (vr, 03 jan 2014) $, $Author: quintijn $"
+__version__ = "$Revision: 535 $, $Date: 2014-01-27 13:37:09 +0100 (ma, 27 jan 2014) $, $Author: quintijn $"
 # (unimacro - natlink macro wrapper/extensions)
 # (c) copyright 2003 Quintijn Hoogenboom (quintijn@users.sourceforge.net)
 #                    Ben Staniford (ben_staniford@users.sourceforge.net)
@@ -413,7 +413,6 @@ def RegisterGrammarObject(GrammarObject):
 ##    print 'registering grammar object: %s: %s'% (GrammarObject.GetName(), GrammarObject)
     loadedGrammars[GrammarObject.GetName()] = GrammarObject
     grammarsChanged = 1
-
 
 def UnRegisterGrammarObject(GrammarObject):
     """unregisters a grammar object from the global variable
@@ -1283,7 +1282,7 @@ class IniGrammar(IniGrammarAncestor):
         self.language = natqh.getLanguage()
         
         if not self.gramSpec:
-            print 'IniGrammar did not find gramSpec'
+            print 'Serious error: IniGrammar did not find gramSpec'
             return
         
         try:
@@ -1301,7 +1300,9 @@ class IniGrammar(IniGrammarAncestor):
         self.gramSpecTranslated = None  # a copy of the resulting translation if any (None otherwise)
 
         # here the grammar is not loaded yet, but the ini file is present
-        self.startInifile()
+        # this could have been done in the user grammar already...
+        if not 'ini' in dir(self):
+            self.startInifile()
         self.name = self.checkName()
         self.debug = None # can be set in some grammar at initialize time
         #mod = sys.modules[self.__module__]
@@ -1371,6 +1372,7 @@ class IniGrammar(IniGrammarAncestor):
             two = [two]
         if isinstance(one, basestring):
             one = [one]
+            
         for i, a in enumerate(one):
             aLower = a.lower()
             for b in two:
@@ -1382,7 +1384,7 @@ class IniGrammar(IniGrammarAncestor):
                         return b, i
                     else:
                         return b
-                elif self.gramWords and bLower in self.gramWords and a in self.gramWords[bLower]:
+                elif self.gramWords and bLower in self.gramWords and aLower in self.gramWords[bLower]:
                     if allResults:
                         L.append(b)
                     elif withIndex:
@@ -1453,11 +1455,8 @@ class IniGrammar(IniGrammarAncestor):
                 if (not value.lower() in translateWords) and \
                         value.lower() in obsoleteTranslateWords:
                     if not printedLines:
-                        print 'Make grammar obsolete word (translation/synonyms) current again: "%s" (grammar: "%s")'% (value, self.name)
-                        print 'value: %s'% value
-                        print 'translate words: %s'% translateWords
-                        print 'obsoleteTranslateWords: %s'% obsoleteTranslateWords
-                        printedLines = 1
+                        print 'Make grammar obsolete word (translation/synonyms) current again: "%s": %s (grammar: "%s")'% (value.lower(),
+                                                                                                                              obsoleteTranslateWords[value.lower()], self.name)
 
                     translateWords[value.lower()] = obsoleteTranslateWords[value.lower()]
                     del obsoleteTranslateWords[value.lower()]
@@ -2198,6 +2197,7 @@ noot mies
         commandDir = os.path.join(userDir,
                                         self.language +"_inifiles")
         inifile = os.path.join(commandDir, modName + '.ini')
+        #print 'starting inifile for %s'% modName
         if not os.path.isfile(inifile):
             print 'Cannot find inifile: %s'% inifile
             self.lookForExampleInifile(commandDir, modName + '.ini')
@@ -2216,7 +2216,7 @@ noot mies
                 commandWord = commandText[self.language]
             except KeyError:
                 commandWord = "edit"
-            
+            self.name = self.getName()
             self.message('===Created new inifile for grammar "%s"\n===Please edit this file by calling the command "%s %s"'%
                          (modName, commandWord, self.name))
         self.inifile = inifile
@@ -2613,10 +2613,10 @@ noot mies
         
 
     ## Here are the grammar rules, that interpret a given number:
-    #def gotResults___1to9(self,words,fullResults):
-    #    numWords = self.getNumbersFromSpoken(words, asStr=1)
-    #    self._sofar = self._sofar + ''.join(numWords)
-        
+    def gotResults___1to9(self,words,fullResults):
+        numWords = self.getNumbersFromSpoken(words, asStr=1)
+        self._sofar = self._sofar + ''.join(numWords)
+    gotResults___0to9 = gotResults___1to9        
 
     def gotResults___1to99(self,words,fullResults):
         numWords = self.getNumbersFromSpoken(words, asStr=1)
@@ -2639,6 +2639,8 @@ noot mies
         #print 'sofar after rule: %s'% self._sofar
 
     gotResults___0to99 = gotResults___1to99
+    gotResults___10to99 = gotResults___1to99
+
 
     def gotResults___hundreds(self,words,fullResults):
         assert not self._hundreds
@@ -3206,13 +3208,17 @@ numberGrammar = {}
 numberGrammar['nld'] = """
 <__1to99> = {n1-99};
 <__0to99> = {n0-99};
+<__0to9> = {n0-9};
+<__10to99> = {n10-99};
 <__hundreds> = honderd | <__1to99> honderd | honderd <__1to99> | <__1to99> honderd <__1to99> ;
 <__thousands> = duizend | (<__1to99>|<__hundreds>) duizend | duizend (<__1to99>|<__hundreds>) |
                    (<__1to99>|<__hundreds>) duizend  (<__1to99>|<__hundreds>);
 <__millions> = miljoen | miljoen (<__thousands>|<__hundreds>|<__1to99>) | (<__hundreds>|<__1to99>) miljoen |
                 (<__hundreds>|<__1to99>) miljoen (<__thousands>|<__hundreds>|<__1to99>) ;
-<integer> =  <__0to99>+ | <__hundreds> | <__thousands> | <__millions>;
-<float> = <integer> (punt|komma)  <__0to99>+;
+<integer> =  <__0to9>+ |  <__10to99>|
+             <__0to9><__10to99>[<__0to99>+] |
+             <__hundreds> | <__thousands> | <__millions>;
+<float> = <integer> (punt|komma) (<__10to99>|<__0to9>+);
 """
 
 numberGrammar['enx'] = """
@@ -3233,9 +3239,12 @@ numberGrammarTill999 = {}
 numberGrammarTill999['nld'] = """
 <__1to99> = {number1to99};
 <__0to99> = {number0to99};
+<__0to9> = {n0-9};
+<__10to99> = {n10-99};
 <__hundreds> = honderd | <__1to99> honderd | honderd <__1to99> | <__1to99> honderd <__1to99> ;
-<integer> =  <__0to99>+ | <__hundreds>;
-<float> = <integer> (punt|komma|dot)  <__0to99>+;
+<integer> = <__0to9>+ |  <__10to99>|
+             <__0to9><__10to99> | <__hundreds>;
+<float> = <integer> (punt|komma|dot) (<__10to99>|<__0to9>+);
 """
 numberGrammarTill999['enx'] = """
 <__0to99> = {n0-19} | {n20-90} | {n20-90}{n1-9};
@@ -3251,11 +3260,14 @@ numberGrammarTill999999 = {}
 numberGrammarTill999999['nld'] = """
 <__1to99> = {n1-99};
 <__0to99> = {n0-99};
+<__0to9> = {n0-9};
+<__10to99> = {n10-99};
 <__hundreds> = honderd | <__1to99> honderd | honderd <__1to99> | <__1to99> honderd <__1to99> ;
 <__thousands> = duizend | (<__1to99>|<__hundreds>) duizend | duizend (<__1to99>|<__hundreds>) |
                    (<__1to99>|<__hundreds>) duizend  (<__1to99>|<__hundreds>);
-<integer> =  <__0to99>+ | <__hundreds> | <__thousands>;
-<float> = <integer> (punt|komma) <__0to99>+;
+<integer> = <__0to9>+ |<__10to99>|
+             <__0to9><__10to99>[<__0to99>]  | <__hundreds> | <__thousands>;
+<float> = <integer> (punt|komma) (<__10to99>|<__0to9>+);
 """
 
 numberGrammarTill999999['enx'] = """

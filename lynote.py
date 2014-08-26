@@ -6,6 +6,12 @@ reNote = re.compile(r"""([a-g](?:as|es|is|s)?)  # the notename
                         ([0-9]*[.]*)            # duration, including augmentation dots
                         (.*)$                   # rest (assume no spaces)
                     """, re.VERBOSE+re.UNICODE)
+
+reRest = re.compile(r"""([rRsS])  # the name of the rest
+                        ##([,']*)                 # elevation (octave up/down                        
+                        ([0-9]*[.]*)            # duration, including augmentation dots
+                       ### (.*)$                   # rest (assume no spaces)
+                    """, re.VERBOSE+re.UNICODE)
 reBackslashedWord = re.compile(r"""([\\]\w+)""")
 
 
@@ -18,6 +24,7 @@ class LyNote(object):
         """parse s and set self.note etc."""
         
         m = reNote.match(s)
+        n = reRest.match(s)
         self.note = self.elevation = self.duration = ""
         rest = s
         self.additions = ""
@@ -30,6 +37,11 @@ class LyNote(object):
             if rest:
                 self.additions, self.backslashed = self.orderRest(rest)
                 # backslashed is a list of \melisma etc.
+        elif n:
+            self.note = n.group(1)
+            self.duration = n.group(2)
+            self.elevation = self.rest = ""
+            
         else:
             # can be incomplete, add fake note in front and do again
             sFake = 'c' + s
@@ -142,8 +154,8 @@ if __name__ == '__main__':
     #    lyn.updateNote(r"c8.\(")
     #    print 'note updated to c 8. and \\(: %s'% lyn
     print 'melisma: ============================================='
-    for s in [r"g,8.\melisma", r"a\melisma"]:
-        lyn = LyNote(s)   
+    for s in ["r2", r"g,8.\melisma", r"a\melisma"]:
+        lyn = LyNote(s)
         print 'note: "%s", elevation: "%s", duration: "%s", additions: "%s"'% (lyn.note, lyn.elevation, lyn.duration, lyn.additions)
         print 'input: "%s", str: "%s", repr: "%s"'% (s, lyn, repr(lyn))
         lyn.updateNote("a")

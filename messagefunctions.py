@@ -1090,11 +1090,17 @@ def sendKey(hndle, key):
 
 def waitForForegroundWindow(className=None, nWait=50, waitingTime=0.5):
     """wait some time for foreground window to get in front"""
+    if type(className) == types.StringType:
+        className = [className]
+    elif className is None:
+        print 'waitForForegroundWindow: no classname given'
+        return
     for i in range(nWait):
         hndle = getForegroundWindow()
         if hndle:
             currentClass = win32gui.GetClassName(hndle)
-            if currentClass == className:
+            #print 'foreground window: %s, wanted: %s'% (currentClass, className)
+            if currentClass in className:
                 return hndle
         time.sleep(waitingTime)
 

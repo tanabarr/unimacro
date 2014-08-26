@@ -1,4 +1,4 @@
-__version__ = "$Rev: 526 $ on $Date: 2014-01-03 15:59:37 +0100 (vr, 03 jan 2014) $ by $Author: quintijn $"
+__version__ = "$Rev: 529 $ on $Date: 2014-01-09 13:51:39 +0100 (do, 09 jan 2014) $ by $Author: quintijn $"
 # This file is part of a SourceForge project called "unimacro" see
 # http://unimacro.SourceForge.net and http://qh.antenna.nl/unimacro
 # (c) copyright 2003 see http://qh.antenna.nl/unimacro/aboutunimacro.html
@@ -158,11 +158,11 @@ class ThisGrammar(ancestor):
             print "exclusive (_folders), do switchOnOrOff"
             self.switchOnOrOff()
         hndle = moduleInfo[2]
-
         if hndle and (self.trackAutoFiles or self.trackAutoFolders):
 
             className = win32gui.GetClassName(hndle)
             activefolder = self.getActiveFolder(hndle, className)
+            #print 'activefolder: %s'% activefolder
             if activefolder and os.path.isdir(activefolder) and activefolder != self.activeFolder:
                 self.fillListsForActiveFolder(activefolder, className)
                 print 'set %s (sub)files and %s subfolders'% (len(self.subfilesDict), len(self.subfoldersDict))

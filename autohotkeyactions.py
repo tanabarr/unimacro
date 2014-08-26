@@ -35,7 +35,7 @@ GetAhkScriptFolder get the correct scriptfolder (AutoHotkey in your Documents fo
      
 """
 import glob, os, sys, subprocess, stat, shutil
-import natlinkcorefunctions
+import natlinkcorefunctions, natlinkstatus
 import win32gui
 
 # assume this module is in Unimacro
@@ -45,6 +45,8 @@ sampleAhkDirectory = os.path.join(unimacroDirectory, 'sample_ahk')
 
 ahkexe = None
 ahkscriptfolder = None
+
+status = natlinkstatus.NatlinkStatus()
 
 def ahk_is_active():
     if ahkexe is None:
@@ -74,8 +76,11 @@ def do_ahk_script(script, hndle=None):
                 script = scriptText
             else:
                 # just run ahk script:
-                call_ahk_script_path(scriptPath)
-                return 1
+                result = call_ahk_script_path(scriptPath)
+                if result:
+                    return 'AHK error: %s'% result
+                else:
+                    return 1
         else:
             return "action AHK, not an existing script file: %s (%s)"% (script, scriptPath)
     if script.find(r"%hndle%") >= 0:
@@ -86,16 +91,31 @@ def do_ahk_script(script, hndle=None):
     #print 'AHK with script: %s'% script
     scriptPath = os.path.join(ahkscriptfolder, 'tempscript.ahk')
     open(scriptPath, 'w').write(script+'\n')
-    call_ahk_script_path(scriptPath)
-    return 1
+    result = call_ahk_script_path(scriptPath)
+    if result:
+        return 'AHK error: %s'% result
+    else:
+        return 1
     
 def GetAhkExe():
     """try to get executable of autohotkey.exe, if not there, empty string is put in ahkexe
     
-    also make subdirectory AutoHotkey of the documents directory  the ahk
+    now also use status, if set in configfunctions (in future config gui)
+    
     """
     global ahkexe
+    exedir = status.getAhkExeDir()
+    if exedir and os.path.isdir(exedir):
+        ahk = os.path.join(exedir, "autohotkey.exe")
+        if os.path.isfile(ahk):
+            ahkexe = ahk
+            return
+        else:
+            print 'warning, AhkExeDir in natlinkstatus.ini does not contain "autohotkey.exe": %s'% exedir
+            print 'try default setting in PROGRAMFILES'
+            #print 'AutoHotkey found, %s'% ahkexe
 
+    # no succes, go on with program files:
     pf = natlinkcorefunctions.getExtendedEnv("PROGRAMFILES")
     if pf.find('(x86)')>0:
         # 64 bit:
@@ -120,6 +140,17 @@ def GetAhkScriptFolder():
     """
     global ahkscriptfolder
 
+    scriptfolder = status.getAhkUserDir()
+    if scriptfolder:
+        if os.path.isdir(scriptfolder):
+            ahkscriptfolder = scriptfolder
+            copySampleAhkScripts(sampleAhkDirectory, ahkscriptfolder)
+            return
+        else:
+            print 'warning: AhkUserDir set in natlinkstatus.ini, but no valid directory: %s'% scriptfolder
+            print 'take default in subfolder AutoHotkey from your PERSONAL directory'
+    # not proceed with PERSONAL:
+
     personal = natlinkcorefunctions.getExtendedEnv("PERSONAL")
     if not os.path.isdir(personal):
         raise IOError('cannot find PERSONAL (documents) directory: %s\nPlease check environment variable "PERSONAL", this one should be the same as "~" or "HOME"'% personal)
@@ -142,7 +173,10 @@ def call_ahk_script_path(scriptPath):
     use the global variable ahkexe as executable
     
     """
-    subprocess.call([ahkexe, scriptPath, ""])
+    result = subprocess.call([ahkexe, scriptPath, ""])
+    if result:
+        print 'non-zero result of call_ahk_script_path "%s": %s'% (scriptPath, result)
+        return 
 
 #def call_ahk_script_text(scriptText):
 #    """call the specified ahk script as a text string

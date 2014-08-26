@@ -1,7 +1,7 @@
 """Unimacro grammar that controls/shows/traces state of other grammars
 
 """
-__version__ = "$Rev: 515 $ on $Date: 2013-10-24 09:34:14 +0200 (do, 24 okt 2013) $ by $Author: quintijn $"
+__version__ = "$Rev: 537 $ on $Date: 2014-04-16 16:41:11 +0200 (wo, 16 apr 2014) $ by $Author: quintijn $"
 # This file is part of a SourceForge project called "unimacro" see
 # http://unimacro.SourceForge.net and http://qh.antenna.nl/unimacro
 # (c) copyright 2003 see http://qh.antenna.nl/unimacro/aboutunimacro.html
@@ -106,19 +106,31 @@ class UtilGrammar(ancestor):
         specials = "|" + '|'.join(specialList)
     else:
         specials = ""
-    gramSpec = ["""
-<show> exported = show ((all|active) grammars |
-                        {gramnames} | (grammar|inifile) {gramnames}
-                         """+ specials + """);
-<edit> exported = edit ({gramnames}| (grammar|inifile) {gramnames}"""+ specials +""");
-<switch> exported = switch ((on|off) ((all grammars)|{gramnames}|grammar {gramnames})|
-                            ((all grammars)|{gramnames}|grammar {gramnames})(on|off));
-<showexclusive> exported = show (exclusive |exclusive grammars);
-<resetexclusive> exported = reset (exclusive | exclusive grammars);
-<checkalphabet> exported = check alphabet;
-<message> exported = {message};
-    """]
     
+    gramRules = ['show', 'edit', 'switch', 'showexclusive', 'resetexclusive', 'checkalphabet', 'message']
+    gramDict = {}
+    gramDict['show'] = """<show> exported = show ((all|active) grammars |
+                        {gramnames} | (grammar|inifile) {gramnames}
+                         """ + specials + """);"""
+    gramDict['edit'] = """<edit> exported = edit ({gramnames}| (grammar|inifile) {gramnames}"""+ specials +""");"""
+    gramDict['switch'] = """<switch> exported = switch ((on|off) ((all grammars)|{gramnames}|grammar {gramnames})|
+                            ((all grammars)|{gramnames}|grammar {gramnames})(on|off));"""
+    gramDict['showexclusive'] = """<showexclusive> exported = show (exclusive |exclusive grammars);"""
+    gramDict['resetexclusive'] = """<resetexclusive> exported = reset (exclusive | exclusive grammars);"""
+    gramDict['checkalphabet'] = """<checkalphabet> exported = check alphabet;"""
+    gramDict['message'] = """<message> exported = {message};"""
+
+    gramSpec = []
+    assert set(gramRules) == set(gramDict.keys())
+
+    if language == 'nld':
+        gramDict['checkalphabet'] = """<checkalphabet> exported = controleer alfabet;"""
+
+    for rulename in gramRules:
+        gramSpec.append(gramDict[rulename])
+    
+    
+    ## extra: the trace rule:    
     if specials:
         specials2 = specials[1:]  # remove initial "|" (at show it is  "| actions | 'spoken forms'", here it is
                                   #     "actions | 'spoken forms'" only, because gramnames etc are not implemented
